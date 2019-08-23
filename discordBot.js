@@ -3,6 +3,7 @@ const logger = require('debug')('logs');
 
 const DEFAULT_DAY_LIMIT = 15;
 let haltQueue = [];
+let deletionQueue = [];
 
 let currentDate = new Date();
 const client = new Discord.Client();
@@ -12,9 +13,10 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function removeUser(userName) {
+async function removeUserFromQueues(userName) {
   await sleep(500);
   haltQueue = haltQueue.filter(name => name !== userName);
+  deletionQueue = deletionQueue.filter(name => name !== userName);
 }
 
 function awfulChannelParse(text) {
@@ -33,7 +35,7 @@ function attemptCommmand(caller, args) {
   }
 }
 
-function checkDayDifference(currentDate, lastDateFetched, dayDifference) {
+function reachedPostLimit(currentDate, lastDateFetched, dayDifference) {
   return Math.round((currentDate.getTime() - lastDateFetched.getTime())/(1000*60*60*24)) <= dayDifference;
 }
 
@@ -41,27 +43,37 @@ logger('Starting bot up. Ready to receive connections...');
 
 async function deleteImages(targetChannel, targetUser, numberOfDays) {
   logger('%o Deleting images by %o', arguments.callee, targetUser.username);
+  deletionQueue.push(targetUser.username);
   let deleteCount = 0;
   let params = { limit: 100 };
   let targetMessages;
   targetMessages = await targetChannel.fetchMessages(params);
 
-  while (checkDayDifference(currentDate, targetMessages.last().createdAt, numberOfDays) && !haltQueue.includes(targetUser.username)) {
+  while (reachedPostLimit(currentDate, targetMessages.last().createdAt, numberOfDays) && !haltQueue.includes(targetUser.username)) {
     try {
       params.before = targetMessages.last().id;
     } catch (error) {
-      logger('%o Reached End of history', arguments.callee);
+      logger(`${arguments.callee} Reached End of history`);
       return;
     }
     targetMessages = targetMessages.filter(m => m.author.id === targetUser.id && m.attachments.size > 0);
     deleteCount += targetMessages.array().length;
     targetMessages.deleteAll();
-    logger('%o %o images deleted for %o (%o total)', arguments.callee, targetMessages.size, targetUser.username, deleteCount);
+    logger('%o %o images deleted for %o (%o total)',
+            arguments.callee,
+            targetMessages.size,
+            targetUser.username,
+            deleteCount
+          );
     targetMessages = await targetChannel.fetchMessages(params);
     await sleep(500);
   }
-  await removeUser(targetUser.username);
-  logger('%o Images deleted for %o %o', arguments.callee, targetUser.username, haltQueue.includes(targetUser.username) ? '(task stopped by user)' : '(task completed)');
+  logger('%o Images deleted for %o %o',
+          arguments.callee,
+          targetUser.username,
+          haltQueue.includes(targetUser.username) ? '(task stopped by user)' : '(task completed)'
+        );
+  await removeUserFromQueues(targetUser.username);
   targetUser.send(`Hi ${targetUser.username}, I deleted ${deleteCount} images/attachments from the past ${numberOfDays} days. Please note that these are not all the images/attachments on the server itself.`);
 }
 
@@ -76,8 +88,11 @@ client.on('message', message => {
       }
       break;
     case '!stop':
-      haltQueue.push(message.author.username);
-      logger('Stopping deleting task for %o', message.author.username);
+      if (deletionQueue.includes(message.author.username)) {
+        haltQueue.push(message.author.username);
+        deletionQueue = deletionQueue.filter(element => element !== message.author.username);
+        logger('Stopping delete_images task for %o', message.author.username);
+      }
       break;
     default:
       break;
