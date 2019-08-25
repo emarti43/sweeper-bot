@@ -94,6 +94,9 @@ client.on('message', message => {
         logger('Stopping delete_images task for %o', message.author.username);
       }
       break;
+    case '!purge_images':
+      attemptCommmand(deleteImages, [awfulChannelParse(args[1]), message.author, true, 4000]);
+      break;
     default:
       break;
   }
