@@ -35,21 +35,23 @@ function attemptCommmand(caller, args) {
   }
 }
 
-function reachedPostLimit(currentDate, lastDateFetched, dayDifference) {
-  return Math.round((currentDate.getTime() - lastDateFetched.getTime())/(1000*60*60*24)) <= dayDifference;
+function reachedPostLimit(currentDate, lastDateFetched, maxDays, username) {
+  let currentDays = Math.round((currentDate.getTime() - lastDateFetched.getTime())/(1000*60*60*24));
+  logger('%o days and counting %o', currentDays, username);
+  return currentDays <= maxDays;
 }
 
 logger('Starting bot up. Ready to receive connections...');
 
 async function deleteImages(targetChannel, targetUser, numberOfDays) {
+  logger(haltQueue.in);
   logger('%o Deleting images by %o', arguments.callee, targetUser.username);
   deletionQueue.push(targetUser.username);
   let deleteCount = 0;
   let params = { limit: 100 };
-  let targetMessages;
-  targetMessages = await targetChannel.fetchMessages(params);
+  let targetMessages = await targetChannel.fetchMessages(params);
 
-  while (reachedPostLimit(currentDate, targetMessages.last().createdAt, numberOfDays) && !haltQueue.includes(targetUser.username)) {
+  while (reachedPostLimit(currentDate, targetMessages.last().createdAt, numberOfDays, targetUser.username) && !haltQueue.includes(targetUser.username)) {
     try {
       params.before = targetMessages.last().id;
     } catch (error) {
@@ -82,9 +84,9 @@ client.on('message', message => {
   switch(args[0]) {
     case '!delete_images':
       if(args[2]) {
-        attemptCommmand(deleteImages, [awfulChannelParse(args[1]), message.author, true, parseInt(args[2])]);
+        attemptCommmand(deleteImages, [awfulChannelParse(args[1]), message.author, parseInt(args[2])]);
       } else {
-        attemptCommmand(deleteImages, [awfulChannelParse(args[1]), message.author, true, DEFAULT_DAY_LIMIT]);
+        attemptCommmand(deleteImages, [awfulChannelParse(args[1]), message.author, DEFAULT_DAY_LIMIT]);
       }
       break;
     case '!stop':
@@ -95,7 +97,7 @@ client.on('message', message => {
       }
       break;
     case '!purge_images':
-      attemptCommmand(deleteImages, [awfulChannelParse(args[1]), message.author, true, 4000]);
+      attemptCommmand(deleteImages, [awfulChannelParse(args[1]), message.author, 4000]);
       break;
     default:
       break;
