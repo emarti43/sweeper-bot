@@ -97,14 +97,17 @@ client.on('message', message => {
       } else {
         attemptCommmand(deleteImages, [awfulChannelParse(args[1]), message.author, DEFAULT_DAY_LIMIT]);
       }
+      break;
     case '!stop':
       if (deletionQueue.includes(message.author.username)) {
         haltQueue.push(message.author.username);
         deletionQueue = deletionQueue.filter(element => element !== message.author.username);
         logger('Stopping delete_images task for %o', message.author.username);
       }
+      break;
     case '!purge_images':
-      attemptCommmand(deleteImages, [awfulChannelParse(args[1]), message.author, 4000])
+      attemptCommmand(deleteImages, [awfulChannelParse(args[1]), message.author, 4000]);
+      break;
     default:
       asyncRemoveAttachments(message);
   }
