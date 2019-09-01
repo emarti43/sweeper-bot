@@ -18,6 +18,15 @@ async function removeUserFromQueues(userName) {
   haltQueue = haltQueue.filter(name => name !== userName);
   deletionQueue = deletionQueue.filter(name => name !== userName);
 }
+async function asyncRemoveAttachments(message) {
+  if (message.attachments.size > 0) {
+    logger('awaiting delete');
+    await sleep(1000*60*3);
+    let channelName = message.channel.name;
+    message.delete();
+    logger('message has been deleted in %o', channelName);
+  }
+}
 
 function awfulChannelParse(text) {
   try {
@@ -88,19 +97,16 @@ client.on('message', message => {
       } else {
         attemptCommmand(deleteImages, [awfulChannelParse(args[1]), message.author, DEFAULT_DAY_LIMIT]);
       }
-      break;
     case '!stop':
       if (deletionQueue.includes(message.author.username)) {
         haltQueue.push(message.author.username);
         deletionQueue = deletionQueue.filter(element => element !== message.author.username);
         logger('Stopping delete_images task for %o', message.author.username);
       }
-      break;
     case '!purge_images':
-      attemptCommmand(deleteImages, [awfulChannelParse(args[1]), message.author, 4000]);
-      break;
+      attemptCommmand(deleteImages, [awfulChannelParse(args[1]), message.author, 4000])
     default:
-      break;
+      asyncRemoveAttachments(message);
   }
 });
 
