@@ -29,19 +29,19 @@ async function removeUserFromQueues(userName) {
 }
 
 async function isValidChannel(message) {
-  await pool.query('SELECT channel_id FROM allowedchannels;', (err, res) => {
-    if(err) {
-      console.log(err.stack);
-    } else {
-      for(let i = 0; i < res.rows.length; i++) {
-        if (res.rows[i].channel_id === message.channel.id) return true;
-      }
-    }
-  });
+  try {
+    var res = await pool.query('SELECT channel_id FROM allowedchannels;');
+  } catch(err) {
+    console.log(err);
+  }
+  for(let i = 0; i < res.rows.length; i++) {
+    if (res.rows[i].channel_id === message.channel.id) return true;
+  }
   return false;
 }
 async function asyncRemoveAttachments(message) {
-  if (message.attachments.size > 0 && await isValidChannel(message)) {
+  let isValid = await isValidChannel(message);
+  if (message.attachments.size > 0 && isValid) {
     logger('awaiting delete');
     await sleep(1000*60*3);
     let channelName = message.channel.name;
