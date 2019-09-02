@@ -1,5 +1,14 @@
 const Discord = require('discord.js');
 const logger = require('debug')('logs');
+const  { Pool, Client } = require('pg');
+const pool = new Pool({
+  user: 'postgres',
+  host: 'localhost',
+  database: 'postgres',
+  password: process.env.POSTGRES_PASSWORD,
+  port: 5432,
+});
+
 
 const DEFAULT_DAY_LIMIT = 15;
 let haltQueue = [];
@@ -18,8 +27,21 @@ async function removeUserFromQueues(userName) {
   haltQueue = haltQueue.filter(name => name !== userName);
   deletionQueue = deletionQueue.filter(name => name !== userName);
 }
+
+async function isValidChannel(message) {
+  await pool.query('SELECT channel_id FROM allowedchannels;', (err, res) => {
+    if(err) {
+      console.log(err.stack);
+    } else {
+      for(let i = 0; i < res.rows.length; i++) {
+        if (res.rows[i].channel_id === message.channel.id) return true;
+      }
+    }
+  });
+  return false;
+}
 async function asyncRemoveAttachments(message) {
-  if (message.attachments.size > 0) {
+  if (message.attachments.size > 0 && await isValidChannel(message)) {
     logger('awaiting delete');
     await sleep(1000*60*3);
     let channelName = message.channel.name;
