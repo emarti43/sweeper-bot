@@ -11,3 +11,5 @@ Some useful debugging information is provided to track the deletion tasks when p
 ```
 DEBUG=log node discordBot.js
 ```
+### notes
+this bot has a feature that deletes images posted from a particular channel. these channels are stored via some local psql database. Please have the server up and running in order for this feature to work
