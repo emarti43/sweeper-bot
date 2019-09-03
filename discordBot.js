@@ -22,6 +22,16 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function getTimestampDate() {
+  let currentdate = new Date();
+  return "Time: " + currentdate.getDate() + "/"
+              + (currentdate.getMonth()+1)  + "/"
+              + currentdate.getFullYear() + " @ "
+              + currentdate.getHours() + ":"
+              + currentdate.getMinutes() + ":"
+              + currentdate.getSeconds();
+}
+
 async function removeUserFromQueues(userName) {
   await sleep(500);
   haltQueue = haltQueue.filter(name => name !== userName);
@@ -39,6 +49,7 @@ async function isValidChannel(message) {
   }
   return false;
 }
+
 async function asyncRemoveAttachments(message) {
   let isValid = await isValidChannel(message);
   if (message.attachments.size > 0 && isValid) {
@@ -92,14 +103,16 @@ async function deleteImages(targetChannel, targetUser, numberOfDays) {
     targetMessages = targetMessages.filter(m => m.author.id === targetUser.id && m.attachments.size > 0);
     deleteCount += targetMessages.array().length;
     targetMessages.deleteAll();
-    logger('%o %o images deleted for %o (%o total)',
+    let datetime = getTimestampDate();
+    logger('%o %o %o images deleted for %o (%o total)',
+            datetime,
             arguments.callee,
             targetMessages.size,
             targetUser.username,
             deleteCount
           );
     targetMessages = await targetChannel.fetchMessages(params);
-    await sleep(500);
+    await sleep(750);
   }
   logger('%o Images deleted for %o %o',
           arguments.callee,
@@ -114,6 +127,7 @@ client.on('message', message => {
   let args = message.content.split(' ');
   switch(args[0]) {
     case '!delete_images':
+      message.react('⏱');
       if(args[2]) {
         attemptCommmand(deleteImages, [awfulChannelParse(args[1]), message.author, parseInt(args[2])]);
       } else {
@@ -128,10 +142,12 @@ client.on('message', message => {
       }
       break;
     case '!purge_images':
+      message.react('⏱');
       attemptCommmand(deleteImages, [awfulChannelParse(args[1]), message.author, 4000]);
       break;
     default:
-      asyncRemoveAttachments(message);
+      break;
+      //asyncRemoveAttachments(message);
   }
 });
 
