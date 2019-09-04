@@ -16,7 +16,6 @@ let deletionQueue = [];
 let currentDate = new Date();
 const client = new Discord.Client();
 
-
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -48,16 +47,16 @@ async function isValidChannel(message) {
 
 async function getCheckpoint(user, channel_id) {
   try {
-    var res = await pool.query('SELECT last_checkpoint FROM checkpoints WHERE user_id = $1 AND channel_id = $2;', [user.id, channel_id]);
+    var res = await pool.query('SELECT last_checkpoint, total_images FROM checkpoints WHERE user_id = $1 AND channel_id = $2;', [user.id, channel_id]);
   } catch(err) {
     console.log(err);
   }
-  return res.rows && res.rows.length > 0 ? res.rows[0].last_checkpoint: undefined;
+  return res.rows && res.rows.length > 0 ? res.rows[0]: undefined;
 }
 
-async function updateCheckpoint(user, message_id, channel_id) {
+async function updateCheckpoint(user, message_id, channel_id, total_count) {
   try{
-    var res = await pool.query('INSERT INTO checkpoints(user_id, last_checkpoint, channel_id) VALUES($1, $2, $3) ON CONFLICT (user_id, channel_id) DO UPDATE SET last_checkpoint = EXCLUDED.last_checkpoint;', [user.id, message_id, channel_id]);
+    var res = await pool.query('INSERT INTO checkpoints(user_id, last_checkpoint, channel_id, total_images) VALUES($1, $2, $3, $4) ON CONFLICT (user_id, channel_id) DO UPDATE SET last_checkpoint = EXCLUDED.last_checkpoint, total_images = EXCLUDED.total_images;', [user.id, message_id, channel_id, total_count]);
   } catch (err) {
     console.log(err);
   }
@@ -66,7 +65,7 @@ async function updateCheckpoint(user, message_id, channel_id) {
 async function asyncRemoveAttachments(message) {
   let isValid = await isValidChannel(message);
   if (message.attachments.size > 0 && isValid) {
-    await sleep(1000*60*10);
+    await sleep(1000*60*3);
     let channelName = message.channel.name;
     message.delete();
     logger('message has been deleted in %o', channelName);
@@ -88,14 +87,17 @@ function reachedPostLimit(currentDate, lastDateFetched, maxDays, username) {
 }
 
 async function deleteImages(targetChannel, targetUser, numberOfDays) {
-  let deleteCount = 0;
+  let imageCount = 0;
   let params = { limit: 100 };
 
   logger('%o Deleting images by %o', arguments.callee, targetUser.username);
 
-  deletionQueue.push({user_id: targetUser.username, channel_id: targetChannel.id});
-
-  params.before = await getCheckpoint(targetUser, targetChannel.id);
+  deletionQueue.push({ user_id: targetUser.id, channel_id: targetChannel.id });
+  let row = await getCheckpoint(targetUser, targetChannel.id);
+  if(row) {
+    params.before = row.last_checkpoint;
+    imageCount = row.total_images;
+  }
   let targetMessages = await targetChannel.fetchMessages(params);
   if(!targetMessages.last()) {
     logger(`Reached End of history for %o`, targetUser.username);
@@ -104,22 +106,20 @@ async function deleteImages(targetChannel, targetUser, numberOfDays) {
   while (reachedPostLimit(currentDate, targetMessages.last().createdAt, numberOfDays, targetUser.username)) {
     try {
       params.before = targetMessages.last().id;
-      updateCheckpoint(targetUser, params.before, targetChannel.id);
+      updateCheckpoint(targetUser, params.before, targetChannel.id, imageCount);
     } catch (error) {
       logger(`${arguments.callee} Reached End of history`);
       return;
     }
     targetMessages = targetMessages.filter(m => m.author.id === targetUser.id && m.attachments.size > 0);
-    deleteCount += targetMessages.array().length;
+    imageCount += targetMessages.array().length;
     targetMessages.deleteAll();
     let datetime = getTimestampDate();
-    logger('%o %o %o images deleted for %o in %o (%o total)',
+    logger('%o Deleting images for %o in %o (%o total)',
             datetime,
-            arguments.callee,
-            targetMessages.size,
             targetUser.username,
             targetChannel.name,
-            deleteCount
+            imageCount
           );
     targetMessages = await targetChannel.fetchMessages(params);
     await sleep(5000);
@@ -130,7 +130,7 @@ async function deleteImages(targetChannel, targetUser, numberOfDays) {
           '(task completed)'
         );
   await removeUserFromQueues(targetUser);
-  targetUser.send(`Hi ${targetUser.username}, I deleted ${deleteCount} images/attachments from the past ${numberOfDays} days. Please note that these are not all the images/attachments on the server itself.`);
+  targetUser.send(`Hi ${targetUser.username}, I deleted ${imageCount} images/attachments from the past ${numberOfDays} days. Please note that these are not all the images/attachments on the server itself.`);
 }
 
 async function setImageSweep(userId, channelId) {
@@ -165,13 +165,12 @@ async function restartTasks() {
   }
 }
 
-
-
 client.on('ready', () => {
   logger('Starting bot up. Ready to receive connections...');
   logger('Restarting Tasks');
   restartTasks();
 });
+
 client.on('message', message => {
   let args = message.content.split(' ');
   switch(args[0]) {
