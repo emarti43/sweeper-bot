@@ -137,7 +137,7 @@ async function deleteImages(targetChannel, targetUser, numberOfDays) {
             deleteCount
           );
     targetMessages = await targetChannel.fetchMessages(params);
-    await sleep(1000);
+    await sleep(2000);
   }
   logger('%o Images deleted for %o %o',
           arguments.callee,
