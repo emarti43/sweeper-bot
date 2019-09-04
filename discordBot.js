@@ -52,7 +52,7 @@ async function isValidChannel(message) {
 
 async function getCheckpoint(user, channel_id) {
   try {
-    var res = await pool.query('SELECT last_checkpoint, user_id FROM checkpoints WHERE user_id = $1 AND channel_id = $1;', [user.id]);
+    var res = await pool.query('SELECT last_checkpoint FROM checkpoints WHERE user_id = $1 AND channel_id = $2;', [user.id, channel_id]);
   } catch(err) {
     console.log(err);
   }
@@ -109,6 +109,7 @@ async function deleteImages(targetChannel, targetUser, numberOfDays) {
   let deleteCount = 0;
   let params = { limit: 100 };
   params.before = await getCheckpoint(targetUser);
+  console.log(params);
   let targetMessages = await targetChannel.fetchMessages(params);
   if(!targetMessages.last()) {
     logger(`Reached End of history for %o`, targetUser.username);
