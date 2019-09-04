@@ -50,6 +50,23 @@ async function isValidChannel(message) {
   return false;
 }
 
+async function getCheckpoint(user) {
+  try {
+    var res = await pool.query('SELECT last_checkpoint, user_id FROM checkpoints WHERE user_id = $1;', [user.id]);
+  } catch(err) {
+    console.log(err);
+  }
+  return res.rows.length > 0 ? res.rows[0].last_checkpoint: undefined;
+}
+
+async function updateCheckpoint(user, message_id) {
+  try{
+    var res = await pool.query('INSERT INTO checkpoints(user_id, last_checkpoint) VALUES($1, $2) ON CONFLICT (user_id) DO UPDATE SET last_checkpoint = EXCLUDED.last_checkpoint;', [user.id, message_id]);
+  } catch (err) {
+    console.log(err);
+  }
+}
+
 async function asyncRemoveAttachments(message) {
   let isValid = await isValidChannel(message);
   if (message.attachments.size > 0 && isValid) {
@@ -91,11 +108,17 @@ async function deleteImages(targetChannel, targetUser, numberOfDays) {
   deletionQueue.push(targetUser.username);
   let deleteCount = 0;
   let params = { limit: 100 };
+  params.before = await getCheckpoint(targetUser);
   let targetMessages = await targetChannel.fetchMessages(params);
+  if(!targetMessages.last()) {
+    logger(`Reached End of history for %o`, targetUser.username);
+    return;
+  }
 
   while (reachedPostLimit(currentDate, targetMessages.last().createdAt, numberOfDays, targetUser.username) && !haltQueue.includes(targetUser.username)) {
     try {
       params.before = targetMessages.last().id;
+      updateCheckpoint(targetUser, params.before);
     } catch (error) {
       logger(`${arguments.callee} Reached End of history`);
       return;
