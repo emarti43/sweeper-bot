@@ -108,7 +108,7 @@ async function deleteImages(targetChannel, targetUser, numberOfDays) {
   deletionQueue.push(targetUser.username);
   let deleteCount = 0;
   let params = { limit: 100 };
-  params.before = await getCheckpoint(targetUser);
+  params.before = await getCheckpoint(targetUser, targetChannel.id);
   console.log(params);
   let targetMessages = await targetChannel.fetchMessages(params);
   if(!targetMessages.last()) {
