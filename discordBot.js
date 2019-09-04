@@ -50,18 +50,18 @@ async function isValidChannel(message) {
   return false;
 }
 
-async function getCheckpoint(user) {
+async function getCheckpoint(user, channel_id) {
   try {
-    var res = await pool.query('SELECT last_checkpoint, user_id FROM checkpoints WHERE user_id = $1;', [user.id]);
+    var res = await pool.query('SELECT last_checkpoint, user_id FROM checkpoints WHERE user_id = $1 AND channel_id = $1;', [user.id]);
   } catch(err) {
     console.log(err);
   }
   return res.rows.length > 0 ? res.rows[0].last_checkpoint: undefined;
 }
 
-async function updateCheckpoint(user, message_id) {
+async function updateCheckpoint(user, message_id, channel_id) {
   try{
-    var res = await pool.query('INSERT INTO checkpoints(user_id, last_checkpoint) VALUES($1, $2) ON CONFLICT (user_id) DO UPDATE SET last_checkpoint = EXCLUDED.last_checkpoint;', [user.id, message_id]);
+    var res = await pool.query('INSERT INTO checkpoints(user_id, last_checkpoint, channel_id) VALUES($1, $2, $3) ON CONFLICT (user_id, channel_id) DO UPDATE SET last_checkpoint = EXCLUDED.last_checkpoint;', [user.id, message_id, channel_id]);
   } catch (err) {
     console.log(err);
   }
@@ -118,7 +118,7 @@ async function deleteImages(targetChannel, targetUser, numberOfDays) {
   while (reachedPostLimit(currentDate, targetMessages.last().createdAt, numberOfDays, targetUser.username) && !haltQueue.includes(targetUser.username)) {
     try {
       params.before = targetMessages.last().id;
-      updateCheckpoint(targetUser, params.before);
+      updateCheckpoint(targetUser, params.before, targetChannel.id);
     } catch (error) {
       logger(`${arguments.callee} Reached End of history`);
       return;
@@ -127,15 +127,16 @@ async function deleteImages(targetChannel, targetUser, numberOfDays) {
     deleteCount += targetMessages.array().length;
     targetMessages.deleteAll();
     let datetime = getTimestampDate();
-    logger('%o %o %o images deleted for %o (%o total)',
+    logger('%o %o %o images deleted for %o in %o (%o total)',
             datetime,
             arguments.callee,
             targetMessages.size,
             targetUser.username,
+            targetChannel.name,
             deleteCount
           );
     targetMessages = await targetChannel.fetchMessages(params);
-    await sleep(750);
+    await sleep(1000);
   }
   logger('%o Images deleted for %o %o',
           arguments.callee,
