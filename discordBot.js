@@ -40,13 +40,11 @@ async function removeUserFromQueues(userName) {
 
 async function isValidChannel(message) {
   try {
-    var res = await pool.query('SELECT channel_id FROM allowedchannels;');
+    var res = await pool.query('SELECT user_id channel_id FROM imagesweeper WHERE user_id = $1 AND channel_id = $2;', [message.author.id, message.channel.id]);
   } catch(err) {
     console.log(err);
   }
-  for(let i = 0; i < res.rows.length; i++) {
-    if (res.rows[i].channel_id === message.channel.id) return true;
-  }
+  if (res.rows.length > 0) return true;
   return false;
 }
 
@@ -56,7 +54,7 @@ async function getCheckpoint(user, channel_id) {
   } catch(err) {
     console.log(err);
   }
-  return res.rows.length > 0 ? res.rows[0].last_checkpoint: undefined;
+  return res.rows && res.rows.length > 0 ? res.rows[0].last_checkpoint: undefined;
 }
 
 async function updateCheckpoint(user, message_id, channel_id) {
@@ -70,19 +68,10 @@ async function updateCheckpoint(user, message_id, channel_id) {
 async function asyncRemoveAttachments(message) {
   let isValid = await isValidChannel(message);
   if (message.attachments.size > 0 && isValid) {
-    logger('awaiting delete');
-    await sleep(1000*60*3);
+    await sleep(1000*60*10);
     let channelName = message.channel.name;
     message.delete();
     logger('message has been deleted in %o', channelName);
-  }
-}
-
-function awfulChannelParse(text) {
-  try {
-    return client.channels.get(text.split('#')[1].split('>')[0]);
-  } catch(e) {
-    logger(e.message);
   }
 }
 
@@ -100,22 +89,20 @@ function reachedPostLimit(currentDate, lastDateFetched, maxDays, username) {
   return currentDays <= maxDays;
 }
 
-logger('Starting bot up. Ready to receive connections...');
-
 async function deleteImages(targetChannel, targetUser, numberOfDays) {
-  logger(haltQueue.in);
-  logger('%o Deleting images by %o', arguments.callee, targetUser.username);
-  deletionQueue.push(targetUser.username);
   let deleteCount = 0;
   let params = { limit: 100 };
+
+  logger('%o Deleting images by %o', arguments.callee, targetUser.username);
+
+  deletionQueue.push(targetUser.username);
+
   params.before = await getCheckpoint(targetUser, targetChannel.id);
-  console.log(params);
   let targetMessages = await targetChannel.fetchMessages(params);
   if(!targetMessages.last()) {
     logger(`Reached End of history for %o`, targetUser.username);
     return;
   }
-
   while (reachedPostLimit(currentDate, targetMessages.last().createdAt, numberOfDays, targetUser.username) && !haltQueue.includes(targetUser.username)) {
     try {
       params.before = targetMessages.last().id;
@@ -137,7 +124,7 @@ async function deleteImages(targetChannel, targetUser, numberOfDays) {
             deleteCount
           );
     targetMessages = await targetChannel.fetchMessages(params);
-    await sleep(2000);
+    await sleep(4000);
   }
   logger('%o Images deleted for %o %o',
           arguments.callee,
@@ -148,31 +135,57 @@ async function deleteImages(targetChannel, targetUser, numberOfDays) {
   targetUser.send(`Hi ${targetUser.username}, I deleted ${deleteCount} images/attachments from the past ${numberOfDays} days. Please note that these are not all the images/attachments on the server itself.`);
 }
 
+async function setImageSweep(userId, channelId) {
+  try {
+    await pool.query('INSERT INTO imagesweeper(user_id, channel_id) VALUES($1, $2);');
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+function parseChannel(text) {
+  try {
+    return client.channels.get(text.split('#')[1].split('>')[0]);
+  } catch(e) {
+    logger(e.message);
+  }
+}
+
+async function restartTasks() {
+  try {
+    logger('Restarting Tasks');
+    var res =  await pool.query('SELECT * FROM checkpoints;');
+    for(let i = 0; i < res.rows.length; i++) {
+      let targetChannel = await client.channels.get(res.rows[i].channel_id);
+      let targetUser = await client.fetchUser(res.rows[i].user_id)
+      deleteImages(targetChannel, targetUser, 4000);
+    }
+  } catch(err) {
+    console.log(err);
+  }
+}
+
+logger('Starting bot up. Ready to receive connections...');
+
+client.on('ready', () => {
+  restartTasks();
+});
 client.on('message', message => {
   let args = message.content.split(' ');
   switch(args[0]) {
-    case '!delete_images':
-      message.react('⏱');
-      if(args[2]) {
-        attemptCommmand(deleteImages, [awfulChannelParse(args[1]), message.author, parseInt(args[2])]);
-      } else {
-        attemptCommmand(deleteImages, [awfulChannelParse(args[1]), message.author, DEFAULT_DAY_LIMIT]);
-      }
-      break;
-    case '!stop':
-      if (deletionQueue.includes(message.author.username)) {
-        haltQueue.push(message.author.username);
-        deletionQueue = deletionQueue.filter(element => element !== message.author.username);
-        logger('Stopping delete_images task for %o', message.author.username);
-      }
-      break;
     case '!purge_images':
-      message.react('⏱');
-      attemptCommmand(deleteImages, [awfulChannelParse(args[1]), message.author, 4000]);
+      if (!deletionQueue.includes(message.author.username)) {
+        message.react('⏱');
+        attemptCommmand(deleteImages, [parseChannel(args[1]), message.author, 4000]);
+      } else {
+        message.reply("I'm on it 😅");
+      }
       break;
+    case '!set_sweeper':
+      message.react('🧹');
+      attemptCommmand(setImageSweep, [parseChannel(args[1]), message.author.id, message.channel.id]);
     default:
-      break;
-      //asyncRemoveAttachments(message);
+      asyncRemoveAttachments(message);
   }
 });
 
