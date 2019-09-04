@@ -11,7 +11,6 @@ const pool = new Pool({
 
 
 const DEFAULT_DAY_LIMIT = 15;
-let haltQueue = [];
 let deletionQueue = [];
 
 let currentDate = new Date();
@@ -32,10 +31,9 @@ function getTimestampDate() {
               + currentdate.getSeconds();
 }
 
-async function removeUserFromQueues(userName) {
+async function removeUserFromQueues(user) {
   await sleep(500);
-  haltQueue = haltQueue.filter(name => name !== userName);
-  deletionQueue = deletionQueue.filter(name => name !== userName);
+  deletionQueue = deletionQueue.filter(item => item.user_id !== user.id);
 }
 
 async function isValidChannel(message) {
@@ -95,7 +93,7 @@ async function deleteImages(targetChannel, targetUser, numberOfDays) {
 
   logger('%o Deleting images by %o', arguments.callee, targetUser.username);
 
-  deletionQueue.push(targetUser.username);
+  deletionQueue.push({user_id: targetUser.username, channel_id: targetChannel.id});
 
   params.before = await getCheckpoint(targetUser, targetChannel.id);
   let targetMessages = await targetChannel.fetchMessages(params);
@@ -103,7 +101,7 @@ async function deleteImages(targetChannel, targetUser, numberOfDays) {
     logger(`Reached End of history for %o`, targetUser.username);
     return;
   }
-  while (reachedPostLimit(currentDate, targetMessages.last().createdAt, numberOfDays, targetUser.username) && !haltQueue.includes(targetUser.username)) {
+  while (reachedPostLimit(currentDate, targetMessages.last().createdAt, numberOfDays, targetUser.username)) {
     try {
       params.before = targetMessages.last().id;
       updateCheckpoint(targetUser, params.before, targetChannel.id);
@@ -124,14 +122,14 @@ async function deleteImages(targetChannel, targetUser, numberOfDays) {
             deleteCount
           );
     targetMessages = await targetChannel.fetchMessages(params);
-    await sleep(4000);
+    await sleep(5000);
   }
   logger('%o Images deleted for %o %o',
           arguments.callee,
           targetUser.username,
-          haltQueue.includes(targetUser.username) ? '(task stopped by user)' : '(task completed)'
+          '(task completed)'
         );
-  await removeUserFromQueues(targetUser.username);
+  await removeUserFromQueues(targetUser);
   targetUser.send(`Hi ${targetUser.username}, I deleted ${deleteCount} images/attachments from the past ${numberOfDays} days. Please note that these are not all the images/attachments on the server itself.`);
 }
 
@@ -148,6 +146,7 @@ function parseChannel(text) {
     return client.channels.get(text.split('#')[1].split('>')[0]);
   } catch(e) {
     logger(e.message);
+    return undefined;
   }
 }
 
@@ -159,31 +158,38 @@ async function restartTasks() {
       let targetChannel = await client.channels.get(res.rows[i].channel_id);
       let targetUser = await client.fetchUser(res.rows[i].user_id)
       deleteImages(targetChannel, targetUser, 4000);
+      await sleep(400);
     }
   } catch(err) {
     console.log(err);
   }
 }
 
-logger('Starting bot up. Ready to receive connections...');
+
 
 client.on('ready', () => {
+  logger('Starting bot up. Ready to receive connections...');
+  logger('Restarting Tasks');
   restartTasks();
 });
 client.on('message', message => {
   let args = message.content.split(' ');
   switch(args[0]) {
     case '!purge_images':
-      if (!deletionQueue.includes(message.author.username)) {
-        message.react('⏱');
-        attemptCommmand(deleteImages, [parseChannel(args[1]), message.author, 4000]);
-      } else {
-        message.reply("I'm on it 😅");
+      if(parseChannel(args[1])) {
+        if (!deletionQueue.some(item => message.author.id === item.user_id && message.channel.id)) {
+          message.react('⏱');
+          attemptCommmand(deleteImages, [parseChannel(args[1]), message.author, 4000]);
+        } else {
+          message.reply("I'm on it 😅");
+        }
       }
       break;
     case '!set_sweeper':
-      message.react('🧹');
-      attemptCommmand(setImageSweep, [parseChannel(args[1]), message.author.id, message.channel.id]);
+      if(parseChannel(args[1])) {
+        message.react('🧹');
+        attemptCommmand(setImageSweep, [parseChannel(args[1]), message.author.id, message.channel.id]);
+      }
     default:
       asyncRemoveAttachments(message);
   }
