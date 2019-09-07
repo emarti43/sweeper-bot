@@ -55,13 +55,19 @@ async function isValidChannel(message) {
   return false;
 }
 
-async function removeValidImages(message) {
+async function processMessage(message) {
   let isValid = await isValidChannel(message);
-  if (message.attachments.size > 0 && isValid) {
-    await sleep(1000*60*3);
-    let channelName = message.channel.name;
-    message.delete();
-    logger('message has been deleted in %o', channelName);
+  if (message.attachments.size > 0) {
+    if (isValid) {
+      await sleep(1000*60*3);
+      let channelName = message.channel.name;
+      message.delete();
+      logger('message has been deleted in %o', channelName);
+    } else {
+      logger('storing message');
+      let serverId = await client.guilds.find(guild => guild.channels.has(message.channel.id)).id;
+      storeImage(message.id, message.channel.id, serverId, message.author.id);
+    }
   }
 }
 
@@ -102,6 +108,13 @@ async function storeImage(messageId, channelId, serverId, userId) {
     console.log(err);
   }
 }
+async function removeImage(messageId, channelId) {
+  try {
+    await pool.query('DELETE FROM images WHERE images.message_id = $1 AND images.channel_id = $2', [messageId, channelId]);
+  } catch (err) {
+    console.log(err);
+  }
+}
 
 async function scrapeImages(targetChannel) {
   let serverId = await client.guilds.find(guild => guild.channels.has(targetChannel.id)).id;
@@ -115,8 +128,9 @@ async function scrapeImages(targetChannel) {
     console.log(err);
     return;
   }
+  let timestamp = messageChunk.last() ? getTimestampDate(messageChunk.last().createdAt) : 'Finished purge';
 
-  logger('Scraping Images from %o [%o]', targetChannel.name, getTimestampDate(messageChunk.last().createdAt));
+  logger('Scraping Images from %o [%o]', targetChannel.name, timestamp);
 
   while (messageChunk.last()) {
     //setup params for next store and update the checkpoint
@@ -136,14 +150,54 @@ async function scrapeImages(targetChannel) {
     //wait and fetch the next chunk
     await sleep(250);
     messageChunk = await targetChannel.fetchMessages(params);
-    logger('Fetching Images from %o [%o total] %o', targetChannel.name, imageCount, getTimestampDate(messageChunk.last().createdAt));
+    timestamp = messageChunk.last() ? messageChunk.last().createdAt : undefined;
+    logger('Fetching Images from %o [%o total] %o', targetChannel.name, imageCount, getTimestampDate(timestamp));
   }
   logger(`Fetched all messages from ${targetChannel.name}`);
   updateCheckpoint(serverId, targetChannel.id, END_OF_PURGE);
 }
 
-async function deleteImages(targetChannel, targetUser, numberOfDays) {
+async function fetchImages(userId, channelId, serverId) {
+  try {
+    var response = await pool.query('SELECT message_id FROM images WHERE user_id = $1 AND channel_id = $2 AND server_id = $3;', [userId, channelId, serverId]);
+  } catch (err) {
+    console.log(error);
+  }
+  return response;
+}
+async function deleteImage(messageId, channelId, serverId) {
+  try {
+    await pool.query('DELETE FROM images WHERE message_id = $1 AND channel_id = $2 AND server_id = $3;', [messageId, channelId, serverId]);
+  }catch(err) {
+    console.log(error)
+  }
+}
+
+async function deleteImages(targetUser, targetChannel) {
   logger('purge was initiated by %o', targetUser.username);
+  let serverId = await client.guilds.find(guild => guild.channels.has(targetChannel.id)).id;
+  let response = await fetchImages(targetUser.id, targetChannel.id, serverId);
+  let imageCount = 0;
+  if(response.rows) {
+    imageCount = response.rows.length;
+    for(let i = 0; i < response.rows.length; i++) {
+      try{
+        var message = await targetChannel.fetchMessage(response.rows[i].message_id);
+      } catch (err) {
+        logger('fetched nonexistent key');
+        deleteImage(response.rows[i].message_id, targetChannel.id, serverId);
+        continue;
+      }
+      if (message) {
+        message.delete();
+        logger('Deleting image for %o (%o out of %o).', targetUser.username, (i+1), imageCount);
+        deleteImage(message.id, targetChannel.id, serverId);
+      }
+      await sleep(1000);
+    }
+  }
+  await removeCheckpoint(targetUser, targetChannel);
+  targetUser.send(`Hi ${targetUser.username}. I've deleted ${imageCount} images from ${targetChannel.name}. Please check if any recent images you've uploaded are not deleted.`);
 }
 
 async function setImageSweep(userId, channelId) {
@@ -163,16 +217,15 @@ function parseChannel(text) {
   }
 }
 
-//NOTE: not being used
 async function continuePurges() {
   try {
     logger('Restarting Purges');
     var res =  await pool.query('SELECT * FROM checkpoints;');
     for(let i = 0; i < res.rows.length; i++) {
+      let targetUser = await client.fetchUser(res.rows[i].user_id);
       let targetChannel = await client.channels.get(res.rows[i].channel_id);
-      let targetUser = await client.fetchUser(res.rows[i].user_id)
-      deleteImages(targetChannel, targetUser, PURGE_DAY_LIMIT);
-      await(100);
+      deleteImages(targetUser, targetChannel);
+      await sleep(10000);
     }
   } catch(err) {
     console.log(err);
@@ -205,7 +258,7 @@ async function scrapeChannels() {
 client.on('ready', () => {
   logger('Starting bot up. Ready to receive connections...');
   logger('Fetching Messages from Allowed Channels');
-  scrapeChannels();
+  continuePurges();
 });
 
 async function queuePurge(userId, channelId) {
@@ -231,9 +284,9 @@ client.on('message', message => {
   switch(args[0]) {
     case '!purge_images':
       if(parseChannel(args[1])) {
-        if (attemptCommmand(queuePurge, [message.user.id, parseChannel(args[1]).id])) {
+        if (attemptCommmand(queuePurge, [message.author.id, parseChannel(args[1]).id])) {
           message.react('⏱');
-          attemptCommmand(deleteImages, [parseChannel(args[1]), message.author, 400]);
+          attemptCommmand(deleteImages, [message.author, parseChannel(args[1])]);
         } else message.reply("I'm on it 😅");
       }
       break;
@@ -242,8 +295,9 @@ client.on('message', message => {
         message.react('🧹');
         attemptCommmand(setImageSweep, [parseChannel(args[1]), message.author.id, message.channel.id]);
       }
+      break;
     default:
-      removeValidImages(message);
+      processMessage(message);
   }
 });
 
