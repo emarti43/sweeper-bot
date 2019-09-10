@@ -44,6 +44,9 @@ function getTimestampDate(date) {
               + currentdate.getSeconds();
 }
 
+async function getServer(targetChannel) {
+  return await client.guilds.find(guild => guild.channels.has(targetChannel.id));
+}
 
 async function isValidChannel(message) {
   try {
@@ -64,8 +67,8 @@ async function processMessage(message) {
       message.delete();
       logger('message has been deleted in %o', channelName);
     } else {
-      logger('storing message');
-      let serverId = await client.guilds.find(guild => guild.channels.has(message.channel.id)).id;
+      logger('storing message %o', getTimestampDate());
+      let serverId = await getServer(message.channel).id;
       storeImage(message.id, message.channel.id, serverId, message.author.id);
     }
   }
@@ -90,6 +93,9 @@ async function updateCheckpoint(serverId, channelId, scrapingCheckpoint) {
 
 async function removeCheckpoint(targetUser, targetChannel) {
   await pool.query('DELETE FROM checkpoints WHERE checkpoints.user_id = $1 and checkpoints.channel_id = $2;', [targetUser.id, targetChannel.id]);
+}
+async function insertAllowedChannel(serverId, channelId) {
+  await pool.query('INSERT INTO allowedchannels(server_id, channel_id) VALUES($1, $2);', [serverId, channelId]);
 }
 
 async function configureParams(serverId, channelId) {
@@ -117,10 +123,12 @@ async function removeImage(messageId, channelId) {
 }
 
 async function scrapeImages(targetChannel) {
-  let serverId = await client.guilds.find(guild => guild.channels.has(targetChannel.id)).id;
+  let serverId = await getServer(targetChannel).id;
   let params = await configureParams(serverId, targetChannel.id);
   let imageCount = 0;
+
   if (params.before === END_OF_PURGE) return;
+  logger('Beginning logging task for %o', targetChannel.name);
 
   try {
     var messageChunk = await targetChannel.fetchMessages(params);
@@ -175,7 +183,7 @@ async function deleteImage(messageId, channelId, serverId) {
 
 async function deleteImages(targetUser, targetChannel) {
   logger('purge was initiated by %o', targetUser.username);
-  let serverId = await client.guilds.find(guild => guild.channels.has(targetChannel.id)).id;
+  let serverId = await getServer(targetChannel).id;
   let response = await fetchImages(targetUser.id, targetChannel.id, serverId);
   let imageCount = 0;
   if(response.rows) {
@@ -258,6 +266,7 @@ async function scrapeChannels() {
 client.on('ready', () => {
   logger('Starting bot up. Ready to receive connections...');
   logger('Fetching Messages from Allowed Channels');
+  scrapeChannels();
   continuePurges();
 });
 
@@ -279,6 +288,15 @@ async function queuePurge(userId, channelId) {
   }
 }
 
+async function addAllowedChannel(targetChannel) {
+  try {
+    await pool.query('INSERT INTO allowedchannels(server_id, user_id) VALUES($1, $2);', [targetChannel.id, await getServer(targetChannel).id]);
+  } catch(err) {
+    console.log(err);
+  }
+  scrapeImages(targetChannel);
+}
+
 client.on('message', message => {
   let args = message.content.split(' ');
   switch(args[0]) {
@@ -296,6 +314,12 @@ client.on('message', message => {
         attemptCommmand(setImageSweep, [parseChannel(args[1]), message.author.id, message.channel.id]);
       }
       break;
+    case: '!add_channel': {
+      break;
+      if (parseChannel(args[1])) {
+        attemptCommmand(addAllowedChannel,)
+      }
+    }
     default:
       processMessage(message);
   }
