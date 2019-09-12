@@ -116,7 +116,7 @@ async function storeImage(messageId, channelId, serverId, userId) {
 }
 async function removeImage(messageId, channelId) {
   try {
-    await pool.query('DELETE FROM images WHERE images.message_id = $1 AND images.channel_id = $2', [messageId, channelId]);
+    await pool.query('DELETE FROM images WHERE images.message_id = $1 AND images.channel_id = $2;', [messageId, channelId]);
   } catch (err) {
     console.log(err);
   }
@@ -314,10 +314,9 @@ client.on('message', message => {
         attemptCommmand(setImageSweep, [parseChannel(args[1]), message.author.id, message.channel.id]);
       }
       break;
-    case: '!add_channel': {
-      break;
+    case '!add_channel': {
       if (parseChannel(args[1])) {
-        attemptCommmand(addAllowedChannel,)
+        attemptCommmand(addAllowedChannel, [message.channel])
       }
     }
     default:
