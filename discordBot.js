@@ -44,8 +44,8 @@ function getTimestampDate(date) {
               + currentdate.getSeconds();
 }
 
-async function getServer(targetChannel) {
-  return await client.guilds.find(guild => guild.channels.has(targetChannel.id));
+function getServer(targetChannel) {
+  return client.guilds.find(guild => guild.channels.has(targetChannel.id));
 }
 
 async function isValidChannel(message) {
@@ -80,7 +80,7 @@ async function getCheckpoint(serverId, channelId) {
   } catch(err) {
     console.log(err);
   }
-  return response.rows && response.rows.length > 0 ? response.rows[0]: undefined;
+  return response.rowCount > 0 ? response.rows[0]: undefined;
 }
 
 async function updateCheckpoint(serverId, channelId, scrapingCheckpoint) {
@@ -120,49 +120,6 @@ async function removeImage(messageId, channelId) {
   } catch (err) {
     console.log(err);
   }
-}
-
-async function scrapeImages(targetChannel) {
-  let serverId = await getServer(targetChannel).id;
-  let params = await configureParams(serverId, targetChannel.id);
-  let imageCount = 0;
-
-  if (params.before === END_OF_PURGE) return;
-  logger('Beginning logging task for %o', targetChannel.name);
-
-  try {
-    var messageChunk = await targetChannel.fetchMessages(params);
-  } catch (err) {
-    console.log(err);
-    return;
-  }
-  let timestamp = messageChunk.last() ? getTimestampDate(messageChunk.last().createdAt) : 'Finished purge';
-
-  logger('Scraping Images from %o [%o]', targetChannel.name, timestamp);
-
-  while (messageChunk.last()) {
-    //setup params for next store and update the checkpoint
-    try {
-      params.before = messageChunk.last().id;
-      updateCheckpoint(serverId, targetChannel.id, params.before);
-    } catch (error) {
-      logger('Reached End of history');
-    }
-    //store the messages in the database (only images)
-    messageChunk = await messageChunk.filter(message => message.attachments.size > 0);
-    imageCount += messageChunk.size;
-    let array = await messageChunk.array()
-    for (let k = 0; k < array.length; k++) {
-      await storeImage(array[k].id, targetChannel.id, serverId, array[k].author.id);
-    }
-    //wait and fetch the next chunk
-    await sleep(250);
-    messageChunk = await targetChannel.fetchMessages(params);
-    timestamp = messageChunk.last() ? messageChunk.last().createdAt : undefined;
-    logger('Fetching Images from %o [%o total] %o', targetChannel.name, imageCount, getTimestampDate(timestamp));
-  }
-  logger(`Fetched all messages from ${targetChannel.name}`);
-  updateCheckpoint(serverId, targetChannel.id, END_OF_PURGE);
 }
 
 async function fetchImages(userId, channelId, serverId) {
@@ -254,6 +211,49 @@ async function fetchChannels() {
     return channels;
   }
   return [];
+}
+
+async function scrapeImages(targetChannel) {
+  let serverId = await getServer(targetChannel).id;
+  let params = await configureParams(serverId, targetChannel.id);
+  let imageCount = 0;
+
+  if (params.before === END_OF_PURGE) return;
+  logger('Beginning logging task for %o', targetChannel.name);
+
+  try {
+    var messageChunk = await targetChannel.fetchMessages(params);
+  } catch (err) {
+    console.log(err);
+    return;
+  }
+  let timestamp = messageChunk.last() ? getTimestampDate(messageChunk.last().createdAt) : 'Finished purge';
+
+  logger('Scraping Images from %o [%o]', targetChannel.name, timestamp);
+
+  while (messageChunk.last()) {
+    //setup params for next store and update the checkpoint
+    try {
+      params.before = messageChunk.last().id;
+      updateCheckpoint(serverId, targetChannel.id, params.before);
+    } catch (error) {
+      logger('Reached End of history');
+    }
+    //store the messages in the database (only images)
+    messageChunk = await messageChunk.filter(message => message.attachments.size > 0);
+    imageCount += messageChunk.size;
+    let array = await messageChunk.array()
+    for (let k = 0; k < array.length; k++) {
+      await storeImage(array[k].id, targetChannel.id, serverId, array[k].author.id);
+    }
+    //wait and fetch the next chunk
+    await sleep(250);
+    messageChunk = await targetChannel.fetchMessages(params);
+    timestamp = messageChunk.last() ? messageChunk.last().createdAt : undefined;
+    logger('Scraping Images from %o [%o total] %o', targetChannel.name, imageCount, getTimestampDate(timestamp));
+  }
+  logger(`Scraped all messages from ${targetChannel.name}`);
+  updateCheckpoint(serverId, targetChannel.id, END_OF_PURGE);
 }
 
 async function scrapeChannels() {
