@@ -1,3 +1,4 @@
+const PostgresHelper = require('./postgresHelper.js');
 const Discord = require('discord.js');
 const logger = require('debug')('logs');
 const  { Pool, Client } = require('pg');
@@ -9,12 +10,12 @@ const pool = new Pool({
   port: 5432,
 });
 
-
 const PURGE_DAY_LIMIT = 400;
 const END_OF_PURGE = '0';
 
 let currentDate = new Date();
 const client = new Discord.Client();
+const psqlHelper = new PostgresHelper(pool, client);
 
 function attemptCommmand(caller, args) {
   try {
@@ -48,18 +49,9 @@ function getServer(targetChannel) {
   return client.guilds.find(guild => guild.channels.has(targetChannel.id));
 }
 
-async function isValidChannel(message) {
-  try {
-    var res = await pool.query('SELECT user_id, channel_id FROM imagesweeper WHERE user_id = $1 AND channel_id = $2;', [message.author.id, message.channel.id]);
-  } catch(err) {
-    console.log(err);
-  }
-  if (res.rows && res.rows.length > 0) return true;
-  return false;
-}
 
 async function processMessage(message) {
-  let isValid = await isValidChannel(message);
+  let isValid = await psqlHelper.isValidChannel(message);
   if (message.attachments.size > 0) {
     if (isValid) {
       await sleep(1000*60*3);
@@ -69,79 +61,24 @@ async function processMessage(message) {
     } else {
       logger('storing message %o', getTimestampDate());
       let serverId = await getServer(message.channel).id;
-      storeImage(message.id, message.channel.id, serverId, message.author.id);
+      psqlHelper.storeImage(message.id, message.channel.id, serverId, message.author.id);
     }
   }
 }
 
-async function getCheckpoint(serverId, channelId) {
-  try {
-    var response = await pool.query('SELECT scraping_checkpoint FROM allowedchannels WHERE server_id = $1 AND channel_id = $2;', [serverId, channelId]);
-  } catch(err) {
-    console.log(err);
-  }
-  return response.rowCount > 0 ? response.rows[0]: undefined;
-}
-
-async function updateCheckpoint(serverId, channelId, scrapingCheckpoint) {
-  try{
-    var res = await pool.query('INSERT INTO allowedchannels(server_id, channel_id, scraping_checkpoint) VALUES($1, $2, $3) ON CONFLICT (server_id, channel_id) DO UPDATE SET scraping_checkpoint = EXCLUDED.scraping_checkpoint;', [serverId, channelId, scrapingCheckpoint]);
-  } catch (err) {
-    console.log(err);
-  }
-}
-
-async function removeCheckpoint(targetUser, targetChannel) {
-  await pool.query('DELETE FROM checkpoints WHERE checkpoints.user_id = $1 and checkpoints.channel_id = $2;', [targetUser.id, targetChannel.id]);
-}
-async function insertAllowedChannel(serverId, channelId) {
-  await pool.query('INSERT INTO allowedchannels(server_id, channel_id) VALUES($1, $2);', [serverId, channelId]);
-}
-
 async function configureParams(serverId, channelId) {
   let params = { limit: 100 };
-  let row = await getCheckpoint(serverId, channelId);
+  let row = await psqlHelper.getCheckpoint(serverId, channelId);
   if(row && row.scraping_checkpoint) {
     params.before = row.scraping_checkpoint;
   }
   return params;
 }
 
-async function storeImage(messageId, channelId, serverId, userId) {
-  try {
-    await pool.query('INSERT INTO images(message_id, channel_id, server_id, user_id) VALUES($1, $2, $3, $4);', [messageId, channelId, serverId, userId]);
-  } catch(err) {
-    console.log(err);
-  }
-}
-async function removeImage(messageId, channelId) {
-  try {
-    await pool.query('DELETE FROM images WHERE images.message_id = $1 AND images.channel_id = $2;', [messageId, channelId]);
-  } catch (err) {
-    console.log(err);
-  }
-}
-
-async function fetchImages(userId, channelId, serverId) {
-  try {
-    var response = await pool.query('SELECT message_id FROM images WHERE user_id = $1 AND channel_id = $2 AND server_id = $3;', [userId, channelId, serverId]);
-  } catch (err) {
-    console.log(error);
-  }
-  return response;
-}
-async function deleteImage(messageId, channelId, serverId) {
-  try {
-    await pool.query('DELETE FROM images WHERE message_id = $1 AND channel_id = $2 AND server_id = $3;', [messageId, channelId, serverId]);
-  }catch(err) {
-    console.log(error)
-  }
-}
-
 async function deleteImages(targetUser, targetChannel) {
   logger('purge was initiated by %o', targetUser.username);
   let serverId = await getServer(targetChannel).id;
-  let response = await fetchImages(targetUser.id, targetChannel.id, serverId);
+  let response = await psqlHelper.fetchImages(targetUser.id, targetChannel.id, serverId);
   let imageCount = 0;
   if(response.rows) {
     imageCount = response.rows.length;
@@ -150,27 +87,19 @@ async function deleteImages(targetUser, targetChannel) {
         var message = await targetChannel.fetchMessage(response.rows[i].message_id);
       } catch (err) {
         logger('fetched nonexistent key');
-        deleteImage(response.rows[i].message_id, targetChannel.id, serverId);
+        psqlHelper.deleteImage(response.rows[i].message_id, targetChannel.id, serverId);
         continue;
       }
       if (message) {
         message.delete();
         logger('Deleting image for %o (%o out of %o).', targetUser.username, (i+1), imageCount);
-        deleteImage(message.id, targetChannel.id, serverId);
+        psqlHelper.deleteImage(message.id, targetChannel.id, serverId);
       }
       await sleep(1000);
     }
   }
-  await removeCheckpoint(targetUser, targetChannel);
+  await psqlHelper.removeCheckpoint(targetUser, targetChannel);
   targetUser.send(`Hi ${targetUser.username}. I've deleted ${imageCount} images from ${targetChannel.name}. Please check if any recent images you've uploaded are not deleted.`);
-}
-
-async function setImageSweep(userId, channelId) {
-  try {
-    await pool.query('INSERT INTO imagesweeper(user_id, channel_id) VALUES($1, $2);');
-  } catch (err) {
-    console.log(err);
-  }
 }
 
 function parseChannel(text) {
@@ -197,22 +126,6 @@ async function continuePurges() {
   }
 }
 
-async function fetchChannels() {
-  try {
-    var response = await pool.query('SELECT * FROM allowedchannels;');
-  } catch(err) {
-    console.log(err);
-  }
-  if (response.rows && response.rows.length > 0) {
-    var channels = []
-    for(let i = 0; i < response.rows.length; i++) {
-      channels.push(client.channels.get(response.rows[i].channel_id));
-    }
-    return channels;
-  }
-  return [];
-}
-
 async function scrapeImages(targetChannel) {
   let serverId = await getServer(targetChannel).id;
   let params = await configureParams(serverId, targetChannel.id);
@@ -235,7 +148,7 @@ async function scrapeImages(targetChannel) {
     //setup params for next store and update the checkpoint
     try {
       params.before = messageChunk.last().id;
-      updateCheckpoint(serverId, targetChannel.id, params.before);
+      psqlHelper.updateCheckpoint(serverId, targetChannel.id, params.before);
     } catch (error) {
       logger('Reached End of history');
     }
@@ -244,7 +157,7 @@ async function scrapeImages(targetChannel) {
     imageCount += messageChunk.size;
     let array = await messageChunk.array()
     for (let k = 0; k < array.length; k++) {
-      await storeImage(array[k].id, targetChannel.id, serverId, array[k].author.id);
+      await psqlHelper.storeImage(array[k].id, targetChannel.id, serverId, array[k].author.id);
     }
     //wait and fetch the next chunk
     await sleep(250);
@@ -253,11 +166,11 @@ async function scrapeImages(targetChannel) {
     logger('Scraping Images from %o [%o total] %o', targetChannel.name, imageCount, getTimestampDate(timestamp));
   }
   logger(`Scraped all messages from ${targetChannel.name}`);
-  updateCheckpoint(serverId, targetChannel.id, END_OF_PURGE);
+  psqlHelper.updateCheckpoint(serverId, targetChannel.id, END_OF_PURGE);
 }
 
 async function scrapeChannels() {
-  let channels = await fetchChannels();
+  let channels = await psqlHelper.fetchChannels();
   for(let i = 0; i < channels.length; i++) {
     await scrapeImages(channels[i]);
   }
@@ -288,15 +201,6 @@ async function queuePurge(userId, channelId) {
   }
 }
 
-async function addAllowedChannel(targetChannel) {
-  try {
-    await pool.query('INSERT INTO allowedchannels(server_id, user_id) VALUES($1, $2);', [targetChannel.id, await getServer(targetChannel).id]);
-  } catch(err) {
-    console.log(err);
-  }
-  scrapeImages(targetChannel);
-}
-
 client.on('message', message => {
   let args = message.content.split(' ');
   switch(args[0]) {
@@ -311,12 +215,12 @@ client.on('message', message => {
     case '!set_sweeper':
       if(parseChannel(args[1])) {
         message.react('🧹');
-        attemptCommmand(setImageSweep, [parseChannel(args[1]), message.author.id, message.channel.id]);
+        attemptCommmand(psqlHelper.setImageSweep, [parseChannel(args[1]), message.author.id, message.channel.id]);
       }
       break;
     case '!add_channel': {
       if (parseChannel(args[1])) {
-        attemptCommmand(addAllowedChannel, [message.channel])
+        attemptCommmand(psqlHelper.addAllowedChannel, [message.channel])
       }
     }
     default:
