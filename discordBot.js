@@ -52,7 +52,7 @@ function getServer(targetChannel) {
 
 async function processMessage(message) {
   let isValid = await psqlHelper.isValidChannel(message);
-  logger('message in %o is %o', message.channel.name, isValid);
+  logger('message in %o is (%o) %o', message.channel.name, isValid, getTimestampDate());
   if (message.attachments.size > 0) {
     if (isValid) {
       await sleep(1000*60*3);
