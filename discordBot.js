@@ -52,6 +52,7 @@ function getServer(targetChannel) {
 
 async function processMessage(message) {
   let isValid = await psqlHelper.isValidChannel(message);
+  logger('message in %o is %o', message.channel.name, isValid);
   if (message.attachments.size > 0) {
     if (isValid) {
       await sleep(1000*60*3);
@@ -59,7 +60,7 @@ async function processMessage(message) {
       message.delete();
       logger('message has been deleted in %o', channelName);
     } else {
-      logger('storing message %o', getTimestampDate());
+      logger('storing message %o from %o', getTimestampDate(), message.channel.name);
       let serverId = await getServer(message.channel).id;
       psqlHelper.storeImage(message.id, message.channel.id, serverId, message.author.id);
     }
@@ -218,11 +219,11 @@ client.on('message', message => {
         attemptCommmand(psqlHelper.setImageSweep, [parseChannel(args[1]), message.author.id, message.channel.id]);
       }
       break;
-    case '!add_channel': {
+    case '!add_channel':
       if (parseChannel(args[1])) {
         attemptCommmand(psqlHelper.addAllowedChannel, [message.channel])
       }
-    }
+      break;
     default:
       processMessage(message);
   }
