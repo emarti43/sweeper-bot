@@ -14,7 +14,7 @@ class PostgresHelper {
     return false;
   }
 
-  async getCheckpoint(serverId, channelId) {
+  async getScrapingCheckpoint(serverId, channelId) {
     try {
       var response = await this.pool.query('SELECT scraping_checkpoint FROM allowedchannels WHERE server_id = $1 AND channel_id = $2;', [serverId, channelId]);
     } catch(err) {
@@ -23,7 +23,24 @@ class PostgresHelper {
     return response.rowCount > 0 ? response.rows[0]: undefined;
   }
 
-  async updateCheckpoint(serverId, channelId, scrapingCheckpoint) {
+  async getUserCheckpoint(userId, channelId) {
+    try {
+      var response = await pool.query('SELECT * FROM checkpoints WHERE checkpoints.user_id = $1 AND checkpoints.channel_id = $2;', [userId, channelId]);
+    } catch(err) {
+      console.log(err);
+    }
+    return response;
+  }
+
+  async insertUserCheckpoint(userId, channelId) {
+    try {
+      await pool.query('INSERT into checkpoints(user_id, last_checkpoint, channel_id, total_images) VALUES ($1, $2, $3, $4);', [userId, ' ', channelId, 0]);
+    } catch(err) {
+      console.log(err);
+    }
+  }
+
+  async updateScrapingCheckpoint(serverId, channelId, scrapingCheckpoint) {
     try{
       var res = await this.pool.query('INSERT INTO allowedchannels(server_id, channel_id, scraping_checkpoint) VALUES($1, $2, $3) ON CONFLICT (server_id, channel_id) DO UPDATE SET scraping_checkpoint = EXCLUDED.scraping_checkpoint;', [serverId, channelId, scrapingCheckpoint]);
     } catch (err) {
@@ -31,7 +48,7 @@ class PostgresHelper {
     }
   }
 
-  async removeCheckpoint(targetUser, targetChannel) {
+  async removeUserCheckpoint(targetUser, targetChannel) {
     await this.pool.query('DELETE FROM checkpoints WHERE checkpoints.user_id = $1 and checkpoints.channel_id = $2;', [targetUser.id, targetChannel.id]);
   }
 

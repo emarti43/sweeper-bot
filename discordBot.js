@@ -52,7 +52,7 @@ function getServer(targetChannel) {
 
 async function processMessage(message) {
   let isValid = await psqlHelper.isValidChannel(message);
-  logger('message in %o is (%o) %o', message.channel.name, isValid, getTimestampDate());
+  logger('Retrieved Message from %o  %o', message.channel.name, getTimestampDate());
   if (message.attachments.size > 0) {
     if (isValid) {
       await sleep(1000*60*3);
@@ -69,7 +69,7 @@ async function processMessage(message) {
 
 async function configureParams(serverId, channelId) {
   let params = { limit: 100 };
-  let row = await psqlHelper.getCheckpoint(serverId, channelId);
+  let row = await psqlHelper.getScrapingCheckpoint(serverId, channelId);
   if(row && row.scraping_checkpoint) {
     params.before = row.scraping_checkpoint;
   }
@@ -77,7 +77,7 @@ async function configureParams(serverId, channelId) {
 }
 
 async function deleteImages(targetUser, targetChannel) {
-  logger('purge was initiated by %o', targetUser.username);
+  logger('Purge initiated for %o', targetUser.username);
   let serverId = await getServer(targetChannel).id;
   let response = await psqlHelper.fetchImages(targetUser.id, targetChannel.id, serverId);
   let imageCount = 0;
@@ -99,7 +99,7 @@ async function deleteImages(targetUser, targetChannel) {
       await sleep(1000);
     }
   }
-  await psqlHelper.removeCheckpoint(targetUser, targetChannel);
+  await psqlHelper.removeUserCheckpoint(targetUser, targetChannel);
   targetUser.send(`Hi ${targetUser.username}. I've deleted ${imageCount} images from ${targetChannel.name}. Please check if any recent images you've uploaded are not deleted.`);
 }
 
@@ -123,7 +123,7 @@ async function continuePurges() {
       await sleep(10000);
     }
   } catch(err) {
-    console.log(err);
+    logger(err);
   }
 }
 
@@ -132,16 +132,21 @@ async function scrapeImages(targetChannel) {
   let params = await configureParams(serverId, targetChannel.id);
   let imageCount = 0;
 
-  if (params.before === END_OF_PURGE) return;
+  if (params.before === END_OF_PURGE) {
+    logger('Images have been scraped');
+    return;
+  }
   logger('Beginning logging task for %o', targetChannel.name);
 
   try {
     var messageChunk = await targetChannel.fetchMessages(params);
   } catch (err) {
-    console.log(err);
+    logger('%o FAILED TO RETRIEVE MESSAGE CHUNK', targetChannel.name);
+    logger(err);
     return;
   }
-  let timestamp = messageChunk.last() ? getTimestampDate(messageChunk.last().createdAt) : 'Finished purge';
+
+  let timestamp = messageChunk.last() ? getTimestampDate(messageChunk.last().createdAt) : 'Finished Scrape';
 
   logger('Scraping Images from %o [%o]', targetChannel.name, timestamp);
 
@@ -149,7 +154,7 @@ async function scrapeImages(targetChannel) {
     //setup params for next store and update the checkpoint
     try {
       params.before = messageChunk.last().id;
-      psqlHelper.updateCheckpoint(serverId, targetChannel.id, params.before);
+      psqlHelper.updateScrapingCheckpoint(serverId, targetChannel.id, params.before);
     } catch (error) {
       logger('Reached End of history');
     }
@@ -167,7 +172,7 @@ async function scrapeImages(targetChannel) {
     logger('Scraping Images from %o [%o total] %o', targetChannel.name, imageCount, getTimestampDate(timestamp));
   }
   logger(`Scraped all messages from ${targetChannel.name}`);
-  psqlHelper.updateCheckpoint(serverId, targetChannel.id, END_OF_PURGE);
+  psqlHelper.updateScrapingCheckpoint(serverId, targetChannel.id, END_OF_PURGE);
 }
 
 async function scrapeChannels() {
@@ -185,21 +190,10 @@ client.on('ready', () => {
 });
 
 async function queuePurge(userId, channelId) {
-  try {
-    var response = await pool.query('SELECT * FROM checkpoints WHERE checkpoints.user_id = $1 AND checkpoints.channel_id = $2;', [userId, channelId]);
-  } catch(err) {
-    console.log(err);
-  }
-  if (response.rows && response.rows.length > 0) {
-    return false;
-  } else {
-    try {
-      await pool.query('INSERT into checkpoints(user_id, last_checkpoint, channel_id, total_images) VALUES ($1, $2, $3, $4);', [userId, ' ', channelId, 0]);
-    } catch(err) {
-      console.log(err);
-    }
-    return true;
-  }
+  let response = await psqlHelper.getUserCheckpoint(userId, channelId)
+  if (response.rows && response.rows.length > 0) return false;
+  psqlHelper.insertUserCheckpoint(userId, channelId);
+  return true;
 }
 
 client.on('message', message => {
@@ -220,8 +214,9 @@ client.on('message', message => {
       }
       break;
     case '!add_channel':
-      if (parseChannel(args[1])) {
-        attemptCommmand(psqlHelper.addAllowedChannel, [message.channel])
+      if (parseChannel(args[1]) && message.member.hasPermission('ADMINISTRATOR')) {
+        attemptCommmand(psqlHelper.addAllowedChannel, [message.channel]);
+        attempCommand(scrapeImages, [message.channel])
       }
       break;
     default:
