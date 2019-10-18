@@ -17,7 +17,7 @@ let currentDate = new Date();
 const client = new Discord.Client();
 const psqlHelper = new PostgresHelper(pool, client);
 
-function attemptCommmand(caller, args) {
+function attemptCommand(caller, args) {
   try {
     return caller(...args);
   } catch(e) {
@@ -196,28 +196,51 @@ async function queuePurge(userId, channelId) {
   return true;
 }
 
+async function formatChannels(channels) {
+  let result = '**Monitored Channels:**\n'
+  for(let i = 0; i < channels.length; i++) {
+    result += `${channels[i]} \n`;
+  }
+  result += 'Call \`!add_channel <Channel>\` to add another channel \n(needs admin permissions)'
+  return result;
+}
+
+async function displayChannels(channel) {
+  let server = await getServer(channel);
+  let channels = await psqlHelper.fetchChannels(server.id);
+  logger(channels.map( c => c.name));
+  if (channels.length > 0) {
+    channel.send(await formatChannels(channels));
+  } else {
+    channel.send('No channels are being tracked. Please use !add_channel to begin tracking a channel\'s history');
+  }
+}
+
 client.on('message', message => {
   let args = message.content.split(' ');
   switch(args[0]) {
     case '!purge_images':
       if(parseChannel(args[1])) {
-        if (attemptCommmand(queuePurge, [message.author.id, parseChannel(args[1]).id])) {
+        if (attemptCommand(queuePurge, [message.author.id, parseChannel(args[1]).id])) {
           message.react('⏱');
-          attemptCommmand(deleteImages, [message.author, parseChannel(args[1])]);
+          attemptCommand(deleteImages, [message.author, parseChannel(args[1])]);
         } else message.reply("I'm on it 😅");
       }
       break;
     case '!set_sweeper':
       if(parseChannel(args[1])) {
         message.react('🧹');
-        attemptCommmand(psqlHelper.setImageSweep, [parseChannel(args[1]), message.author.id, message.channel.id]);
+        attemptCommand(psqlHelper.setImageSweep, [parseChannel(args[1]), message.author.id, message.channel.id]);
       }
       break;
     case '!add_channel':
       if (parseChannel(args[1]) && message.member.hasPermission('ADMINISTRATOR')) {
-        attemptCommmand(psqlHelper.addAllowedChannel, [message.channel]);
-        attempCommand(scrapeImages, [message.channel])
+        attemptCommand(psqlHelper.addAllowedChannel, [message.channel]);
+        attemptCommand(scrapeImages, [message.channel])
       }
+      break;
+    case '!list_channels':
+      attemptCommand(displayChannels, [message.channel]);
       break;
     default:
       processMessage(message);

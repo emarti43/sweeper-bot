@@ -4,6 +4,7 @@ class PostgresHelper {
     this.pool = postgresPool;
     this.client = discordClient;
   }
+
   async isValidChannel(message) {
     try {
       var res = await this.pool.query('SELECT user_id, channel_id FROM imagesweeper WHERE user_id = $1 AND channel_id = $2;', [message.author.id, message.channel.id]);
@@ -85,20 +86,24 @@ class PostgresHelper {
     }
   }
 
-  async fetchChannels(pool) {
+  async fetchChannels(serverId) {
     try {
-      var response = await this.pool.query('SELECT * FROM allowedchannels;');
+      if (serverId) {
+        var response = await this.pool.query('SELECT * FROM allowedchannels WHERE server_id = $1;', [serverId]);
+      } else {
+        var response = await this.pool.query('SELECT * FROM allowedchannels;');
+      }
     } catch(err) {
       console.log(err);
     }
+    var channels = []
     if (response.rows && response.rows.length > 0) {
-      var channels = []
       for(let i = 0; i < response.rows.length; i++) {
         channels.push(this.client.channels.get(response.rows[i].channel_id));
       }
       return channels;
     }
-    return [];
+    return channels;
   }
 
   async addAllowedChannel(targetChannel) {
