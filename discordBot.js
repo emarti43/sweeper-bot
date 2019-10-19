@@ -10,10 +10,7 @@ const pool = new Pool({
   port: 5432,
 });
 
-const PURGE_DAY_LIMIT = 400;
 const END_OF_PURGE = '0';
-
-let currentDate = new Date();
 const client = new Discord.Client();
 const psqlHelper = new PostgresHelper(pool, client);
 
@@ -21,7 +18,7 @@ function attemptCommand(caller, args) {
   try {
     return caller(...args);
   } catch(e) {
-    logger('%o from %o',e.message, caller.name);
+    logger('%o : %o', caller.name, e.message);
   }
 }
 
@@ -182,13 +179,6 @@ async function scrapeChannels() {
   }
 }
 
-client.on('ready', () => {
-  logger('Starting bot up. Ready to receive connections...');
-  logger('Fetching Messages from Allowed Channels');
-  scrapeChannels();
-  continuePurges();
-});
-
 async function queuePurge(userId, channelId) {
   let response = await psqlHelper.getUserCheckpoint(userId, channelId)
   if (response.rows && response.rows.length > 0) return false;
@@ -215,6 +205,17 @@ async function displayChannels(channel) {
     channel.send('No channels are being tracked. Please use !add_channel to begin tracking a channel\'s history');
   }
 }
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * BOT COMMANDS AND EVENTS
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+client.on('ready', () => {
+  logger('Starting bot up. Ready to receive connections...');
+  scrapeChannels();
+  continuePurges();
+});
+
 
 client.on('message', message => {
   let args = message.content.split(' ');
