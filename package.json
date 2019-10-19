@@ -4,14 +4,16 @@
   "description": "simple discord bot that is used to delete images. Done in JavaScript",
   "main": "discordBot.js",
   "dependencies": {
-    "discord.js": "^11.5.1",
     "debug": "^4.1.1",
+    "discord.js": "^11.5.1",
+    "dotenv": "^8.2.0",
     "mysql": "^2.17.1",
     "pg": "^7.12.1"
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node discordBot.js"
   },
   "repository": {
     "type": "git",

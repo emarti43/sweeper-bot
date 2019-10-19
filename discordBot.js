@@ -1,13 +1,11 @@
 const PostgresHelper = require('./postgresHelper.js');
+require('dotenv').config()
+
 const Discord = require('discord.js');
 const logger = require('debug')('logs');
 const  { Pool, Client } = require('pg');
 const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'postgres',
-  password: process.env.POSTGRES_PASSWORD,
-  port: 5432,
+  connectionString: process.env.DATABASE_URL
 });
 
 const END_OF_PURGE = '0';
