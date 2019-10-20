@@ -5,13 +5,23 @@ class PostgresHelper {
     this.client = discordClient;
   }
 
-  async isValidChannel(message) {
+  async isSweepableChannel(message) {
     try {
       var res = await this.pool.query('SELECT user_id, channel_id FROM imagesweeper WHERE user_id = $1 AND channel_id = $2;', [message.author.id, message.channel.id]);
     } catch(err) {
       console.log(err);
     }
     if (res.rows && res.rows.length > 0) return true;
+    return false;
+  }
+
+  async isAllowedChannel(channelId, serverId) {
+    try {
+      var response = await this.pool.query('SELECT * FROM allowedchannels WHERE channel_id = $1 AND server_id = $2;', [channelId, serverId]);
+    } catch (error) {
+      console.log(error);
+    }
+    if (response.rows && response.length > 0) return true;
     return false;
   }
 

@@ -47,18 +47,20 @@ function getServer(targetChannel) {
 
 
 async function processMessage(message) {
-  let isValid = await psqlHelper.isValidChannel(message);
+  let isSweepable = await psqlHelper.isSweepableChannel(message);
   logger('Retrieved Message from %o  %o', message.channel.name, getTimestampDate());
   if (message.attachments.size > 0) {
-    if (isValid) {
+    if (isSweepable) {
       await sleep(1000*60*3);
       let channelName = message.channel.name;
       message.delete();
       logger('message has been deleted in %o', channelName);
     } else {
-      logger('storing message %o from %o', getTimestampDate(), message.channel.name);
       let serverId = await getServer(message.channel).id;
-      psqlHelper.storeImage(message.id, message.channel.id, serverId, message.author.id);
+      if (await psqlHelper.isAllowedChannel(message.channel.id, serverId)) {
+        logger('storing message %o from %o', getTimestampDate(), message.channel.name);
+        psqlHelper.storeImage(message.id, message.channel.id, serverId, message.author.id);
+      }
     }
   }
 }
