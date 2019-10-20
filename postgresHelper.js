@@ -21,7 +21,7 @@ class PostgresHelper {
     } catch (error) {
       console.log(error);
     }
-    if (response.rows && response.length > 0) return true;
+    if (response.rows && response.rows.length > 0) return true;
     return false;
   }
 
