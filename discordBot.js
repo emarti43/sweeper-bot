@@ -5,7 +5,8 @@ const Discord = require('discord.js');
 const logger = require('debug')('logs');
 const  { Pool, Client } = require('pg');
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL
+  connectionString: process.env.DATABASE_URL,
+  ssl: true,
 });
 
 const END_OF_PURGE = '0';
