@@ -235,7 +235,7 @@ client.on('message', message => {
       break;
     case '!add_channel':
       if (parseChannel(args[1]) && message.member.hasPermission('ADMINISTRATOR')) {
-        attemptCommand(psqlHelper.addAllowedChannel, [message.channel]);
+        attemptCommand(psqlHelper.addAllowedChannel, [parseChannel(args[1])]);
         attemptCommand(scrapeImages, [message.channel])
       }
       break;
