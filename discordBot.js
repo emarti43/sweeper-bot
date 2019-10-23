@@ -209,8 +209,8 @@ async function displayChannels(channel) {
   }
 }
 
-async function showChannelActivity(channel, serverId) {
-  let channels = await psqlHelper.getChannelActivity(serverId);
+async function showChannelActivity(channel) {
+  let channels = await psqlHelper.getChannelActivity(await getServer(channel));
   channel.send(channels.map( c => `${server.get(c.channel_id).name} ${c.message_count}`));
 }
 
@@ -252,7 +252,7 @@ client.on('message', message => {
       attemptCommand(displayChannels, [message.channel]);
       break;
     case '!show_channel_activity':
-      attemptCommand(showChannelActivity, [message.channel, getServer(message.channel)]);
+      attemptCommand(showChannelActivity, [message.channel]);
       break;
     default:
       processMessage(message);
