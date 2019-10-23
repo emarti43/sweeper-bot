@@ -12,6 +12,7 @@ const pool = new Pool({
 const END_OF_PURGE = '0';
 const client = new Discord.Client();
 const psqlHelper = new PostgresHelper(pool, client);
+var messageRateFrequencies = {};
 
 function attemptCommand(caller, args) {
   try {
@@ -47,6 +48,7 @@ function getServer(targetChannel) {
 
 
 async function processMessage(message) {
+  psqlHelper.logActivity(message.channel.id, getServer(message.channel).id);
   let isSweepable = await psqlHelper.isSweepableChannel(message);
   logger('Retrieved Message from %o  %o', message.channel.name, getTimestampDate());
   if (message.attachments.size > 0) {
@@ -57,7 +59,7 @@ async function processMessage(message) {
       logger('message has been deleted in %o', channelName);
     } else {
       let serverId = await getServer(message.channel).id;
-      if (await psqlHelper.isAllowedChannel(message.channel.id, serverId)) {
+      if (await psqlHelper.isMonitoredChannel(message.channel.id, serverId)) {
         logger('storing message %o from %o', getTimestampDate(), message.channel.name);
         psqlHelper.storeImage(message.id, message.channel.id, serverId, message.author.id);
       }
@@ -207,6 +209,11 @@ async function displayChannels(channel) {
   }
 }
 
+async function showChannelActivity(channel, server) {
+  let channels = await getChannelActivity(serverId);
+  channel.send(channels.map( c => `${server.get(c.channel_id).name} ${c.message_count}`));
+}
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * BOT COMMANDS AND EVENTS
@@ -243,6 +250,9 @@ client.on('message', message => {
       break;
     case '!list_channels':
       attemptCommand(displayChannels, [message.channel]);
+      break;
+    case '!show_channel_activity':
+      attemptCommand(showChannelActivity, [parseChannel(args[1]), getServer(message.channel)]);
       break;
     default:
       processMessage(message);

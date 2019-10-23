@@ -15,7 +15,26 @@ class PostgresHelper {
     return false;
   }
 
-  async isAllowedChannel(channelId, serverId) {
+  async logActivity(channelId, serverId) {
+    try {
+      let date = new Date();
+      var response = await this.pool.query('INSERT INTO channel_activity(channel_id, server_id, message_count, last_cycle) VALUES($1, $2, $3, $4) ON CONFLICT (server_id, channel_id) DO UPDATE SET message_count = excluded.message_count + 1;', [channelId, serverId, 1, date.toString()]);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async getChannelActivity(serverId) {
+    try {
+      var response = await this.pool.query('SELECT channel_id, message_count, last_cycle FROM channel_activity WHERE server_id = $1;', [serverId])
+    } catch (error) {
+      console.log(error);
+    }
+    if(response.rowCount > 0) return response.rows;
+    else return [];
+  }
+
+  async isMonitoredChannel(channelId, serverId) {
     try {
       var response = await this.pool.query('SELECT * FROM allowedchannels WHERE channel_id = $1 AND server_id = $2;', [channelId, serverId]);
     } catch (error) {
