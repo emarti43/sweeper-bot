@@ -252,7 +252,7 @@ client.on('message', message => {
       attemptCommand(displayChannels, [message.channel]);
       break;
     case '!show_channel_activity':
-      attemptCommand(showChannelActivity, [parseChannel(args[1]), getServer(message.channel)]);
+      attemptCommand(showChannelActivity, [message.channel, getServer(message.channel)]);
       break;
     default:
       processMessage(message);
