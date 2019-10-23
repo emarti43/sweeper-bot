@@ -210,7 +210,7 @@ async function displayChannels(channel) {
 }
 
 async function showChannelActivity(channel, server) {
-  let channels = await getChannelActivity(serverId);
+  let channels = await psqlHelper.getChannelActivity(serverId);
   channel.send(channels.map( c => `${server.get(c.channel_id).name} ${c.message_count}`));
 }
 
