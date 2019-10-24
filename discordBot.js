@@ -48,7 +48,7 @@ function getServer(targetChannel) {
 
 
 async function processMessage(message) {
-  psqlHelper.logActivity(message.channel.id, getServer(message.channel).id);
+  psqlHelper.logActivity(message.channel.id, await getServer(message.channel).id);
   let isSweepable = await psqlHelper.isSweepableChannel(message);
   logger('Retrieved Message from %o  %o', message.channel.name, getTimestampDate());
   if (message.attachments.size > 0) {
