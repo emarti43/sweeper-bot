@@ -216,7 +216,7 @@ async function showChannelActivity(channel) {
   resultString = channels.reduce( (result, element) => {
     let formattedDate = element.last_cycle.split('/');
     formattedDate = new Date(formattedDate[1], formattedDate[0]);
-    return result  + channel.guild.channels.get(element.channel_id) + '      ' +  element.message_count +  '(' + formattedDate.toDateString() + ')''\n';
+    return result  + channel.guild.channels.get(element.channel_id) + '      ' +  element.message_count +  '(' + formattedDate.toDateString() + ')' + '\n';
     }, resultString);
   channel.send(resultString);
 }
