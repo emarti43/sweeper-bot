@@ -210,7 +210,7 @@ async function displayChannels(channel) {
 }
 
 async function showChannelActivity(channel) {
-  let channels = await psqlHelper.getChannelActivity(await getServer(channel));
+  let channels = await psqlHelper.getChannelActivity(await getServer(channel).id);
   let resultString = '**Channel Frequencies:**\n';
   resultString = channels.reduce( (result, element) => {
     return result  + server.get(element.channel_id).name + '  ' +  element.message_count +  "\n";
