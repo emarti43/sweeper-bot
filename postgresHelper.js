@@ -18,7 +18,7 @@ class PostgresHelper {
   async logActivity(channelId, serverId) {
     try {
       let date = new Date();
-      var response = await this.pool.query('INSERT INTO channel_activity(channel_id, server_id, message_count, last_cycle) VALUES($1, $2, $3, $4) ON CONFLICT (server_id, channel_id) DO UPDATE SET message_count = channel_activity.message_count + 1;', [channelId, serverId, 1, date.toString()]);
+      this.pool.query('INSERT INTO channel_activity(channel_id, server_id, message_count, last_cycle) VALUES($1, $2, $3, $4) ON CONFLICT (server_id, channel_id, last_cycle) DO UPDATE SET message_count = channel_activity.message_count + 1;', [channelId, serverId, 1, '' + date.getMonth() + '/' + date.getFullYear()]);
     } catch (error) {
       console.log(error);
     }
