@@ -219,6 +219,12 @@ async function showChannelActivity(channel) {
   channel.send(resultString);
 }
 
+async function commandResponse(message, content) {
+  message.channel.startTyping();
+  message.channel.send(content);
+  message.channel.stopTyping();
+}
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * BOT COMMANDS AND EVENTS
@@ -236,14 +242,14 @@ client.on('message', message => {
     case '!purge_images':
       if(parseChannel(args[1])) {
         if (attemptCommand(queuePurge, [message.author.id, parseChannel(args[1]).id])) {
-          message.react('⏱');
+          commandResponse(message, '⏱ Starting Purge. You will be messaged when the purge is done (hopefully) ⏱');
           attemptCommand(deleteImages, [message.author, parseChannel(args[1])]);
-        } else message.reply("I'm on it 😅");
+        } else commandResponse(message, "I'm on it 😅");
       }
       break;
     case '!set_sweeper':
       if(parseChannel(args[1])) {
-        message.react('🧹');
+        commandResponse(message, '🧹 Cleaning up after your mess! 🧹');
         attemptCommand(psqlHelper.setImageSweep, [parseChannel(args[1]), message.author.id, message.channel.id]);
       }
       break;
