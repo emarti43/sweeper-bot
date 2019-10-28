@@ -78,8 +78,13 @@ async function configureParams(serverId, channelId) {
 
 async function deleteImages(targetUser, targetChannel) {
   logger('Purge initiated for %o', targetUser.username);
-  let serverId = await getServer(targetChannel).id;
-  let response = await psqlHelper.fetchImages(targetUser.id, targetChannel.id, serverId);
+  try {
+    var serverId = await getServer(targetChannel).id;
+    var response = await psqlHelper.fetchImages(targetUser.id, targetChannel.id, serverId);
+  } catch(error) {
+    logger(error);
+  }
+
   let imageCount = 0;
   if(response.rows) {
     imageCount = response.rows.length;
