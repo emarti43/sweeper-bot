@@ -221,7 +221,7 @@ async function showChannelActivity(channel) {
   resultString = channels.reduce( (result, element) => {
     let formattedDate = element.last_cycle.split('/');
     formattedDate = new Date(formattedDate[1], formattedDate[0]);
-    let row = channel.guild.channels.get(element.channel_id).name.padEnd(30, " ") +  element.message_count.toString().padEnd(5, ' ') + formattedDate.toDateString().padEnd(20, " ") + '\n';
+    let row = channel.guild.channels.get(element.channel_id).name.padEnd(30, " ") +  element.message_count.toString().padEnd(5, ' ') + formattedDate.getMonth() + "/" + formattedDate.getFullYear() + '\n';
     return result + row;
     }, resultString);
   channel.send(resultString);
