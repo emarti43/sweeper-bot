@@ -70,7 +70,7 @@ async function processMessage(message) {
 async function configureParams(serverId, channelId) {
   let params = { limit: 100 };
   let row = await psqlHelper.getScrapingCheckpoint(serverId, channelId);
-  if(row && row.scraping_checkpoint) {
+  if (row && row.scraping_checkpoint) {
     params.before = row.scraping_checkpoint;
   }
   return params;
@@ -81,15 +81,15 @@ async function deleteImages(targetUser, targetChannel) {
   try {
     var serverId = await getServer(targetChannel).id;
     var response = await psqlHelper.fetchImages(targetUser.id, targetChannel.id, serverId);
-  } catch(error) {
+  } catch (error) {
     logger(error);
   }
 
   let imageCount = 0;
-  if(response.rows) {
+  if (response.rows) {
     imageCount = response.rows.length;
     for(let i = 0; i < response.rows.length; i++) {
-      try{
+      try {
         var message = await targetChannel.fetchMessage(response.rows[i].message_id);
       } catch (err) {
         logger('fetched nonexistent key');
@@ -221,14 +221,15 @@ async function showChannelActivity(channel) {
   resultString = channels.reduce( (result, element) => {
     let formattedDate = element.last_cycle.split('/');
     formattedDate = new Date(formattedDate[1], formattedDate[0]);
-    return result  + channel.guild.channels.get(element.channel_id) + '      ' +  element.message_count +  '(' + formattedDate.toDateString() + ')' + '\n';
+    let row = channel.guild.channels.get(element.channel_id) +  element.message_count.toString().padStart(10, ' ') + formattedDate.toDateString().padStart(20, " ") + '\n';
+    return result + row;
     }, resultString);
   channel.send(resultString);
 }
 
 async function commandResponse(message, content) {
   message.channel.startTyping();
-  message.channel.send(content);
+  await message.channel.send(content);
   message.channel.stopTyping();
 }
 
