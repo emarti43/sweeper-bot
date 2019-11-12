@@ -1,4 +1,5 @@
 const PostgresHelper = require('./postgresHelper.js');
+const COMMAND_DESCRIPTIONS = require('./commands.js');
 require('dotenv').config()
 
 const Discord = require('discord.js');
@@ -227,10 +228,18 @@ async function showChannelActivity(channel) {
   channel.send(resultString);
 }
 
-async function commandResponse(message, content) {
-  message.channel.startTyping();
-  await message.channel.send(content);
-  message.channel.stopTyping();
+async function MessageResponse(channel, content) {
+  channel.startTyping();
+  await channel.send(content);
+  channel.stopTyping();
+}
+
+async function showHelp(channel) {
+  let content = ''
+  await Object.keys(COMMAND_DESCRIPTIONS).forEach( commandName => {
+    content +=`\'${commandName}\' - ${COMMAND_DESCRIPTIONS[commandName]}`;
+  });
+  MessageResponse(channel, content);
 }
 
 
@@ -248,16 +257,16 @@ client.on('message', message => {
   let args = message.content.split(' ');
   switch(args[0]) {
     case '!purge_images':
-      if(parseChannel(args[1])) {
+      if (parseChannel(args[1])) {
         if (attemptCommand(queuePurge, [message.author.id, parseChannel(args[1]).id])) {
-          commandResponse(message, '⏱ Starting Purge. You will be messaged when the purge is done (hopefully) ⏱');
+           MessageResponse(message.channel, '⏱ Starting Purge. You will be messaged when the purge is done (hopefully) ⏱');
           attemptCommand(deleteImages, [message.author, parseChannel(args[1])]);
-        } else commandResponse(message, "I'm on it 😅");
+        } else  MessageResponse(message.channel, "I'm on it 😅");
       }
       break;
     case '!set_sweeper':
       if(parseChannel(args[1])) {
-        commandResponse(message, '🧹 Cleaning up after your mess! 🧹');
+         MessageResponse(message.channel, '🧹 Cleaning up after your mess! 🧹');
         attemptCommand(psqlHelper.setImageSweep, [parseChannel(args[1]), message.author.id, message.channel.id]);
       }
       break;
@@ -272,6 +281,9 @@ client.on('message', message => {
       break;
     case '!show_channel_activity':
       attemptCommand(showChannelActivity, [message.channel]);
+      break;
+    case '!help':
+      attemptCommand(showHelp, [message.channel]);
       break;
     default:
       processMessage(message);

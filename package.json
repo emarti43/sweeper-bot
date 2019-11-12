@@ -1,5 +1,5 @@
 {
-  "name": "discordbotjs",
+  "name": "sweeper-bot",
   "version": "1.0.0",
   "description": "simple discord bot that is used to delete images. Done in JavaScript",
   "main": "discordBot.js",
