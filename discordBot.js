@@ -237,7 +237,7 @@ async function MessageResponse(channel, content) {
 async function showHelp(channel) {
   let content = ''
   await Object.keys(COMMAND_DESCRIPTIONS).forEach( commandName => {
-    content +=`\'${commandName}\' - ${COMMAND_DESCRIPTIONS[commandName]}`;
+    content +=`\`${commandName}\` - ${COMMAND_DESCRIPTIONS[commandName]} \n`;
   });
   MessageResponse(channel, content);
 }
