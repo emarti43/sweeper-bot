@@ -214,6 +214,29 @@ async function displayChannels(channel) {
     channel.send('No channels are being tracked. Please use !add_channel to begin tracking a channel\'s history');
   }
 }
+CHARACTER_LIMIT = 2000;
+function messageChunker(s) {
+  let start = 0;
+  let chunks = [];
+  let lookahead = 0;
+  for( let i = 0; i < s.length; i = lookahead) {
+    lookahead = i + 1;
+    while (s[lookahead] !== '\n' && lookahead < s.length) lookahead++;
+    if (lookahead - start > CHARACTER_LIMIT) {
+      let chunk = s.slice(start, i);
+      chunks.push(chunk)
+      start = i;
+    }
+  }
+  return chunks;
+}
+
+function sendChunkedMessage(channel, s) {
+  let chunks = messageChunker(s);
+  chunks.forEach( chunk => {
+    channel.send(chunk);
+  });
+}
 
 async function showChannelActivity(channel) {
   let response = await psqlHelper.getChannelActivity(await getServer(channel).id);
@@ -224,7 +247,7 @@ async function showChannelActivity(channel) {
       resultString += `${channel.guild.channels.get(log.id).name}: ${log.count}\n`
     });
   })
-  channel.send(resultString);
+  sendChunkedMessage(channel, resultString);
 }
 
 async function MessageResponse(channel, content) {
