@@ -45,7 +45,7 @@ class PostgresHelper {
 
   async getChannelActivity(serverId) {
     try {
-      var queryResponse = await this.pool.query('SELECT * FROM channel_activity WHERE server_id = $1 ORDER BY last_cycle;', [serverId])
+      var queryResponse = await this.pool.query('SELECT * FROM channel_activity WHERE server_id = $1 ORDER BY last_cycle, message_count DESC;', [serverId])
     } catch (error) {
       console.log(error);
     }
