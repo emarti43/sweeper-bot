@@ -219,7 +219,7 @@ async function showChannelActivity(channel) {
   let response = await psqlHelper.getChannelActivity(await getServer(channel).id);
   let resultString = '';
   response.forEach( element => {
-    resultString += `Month of **${element.month}** ${element.year}\n`;
+    resultString += `**Month of ${element.month} ${element.year}**\n`;
     element.channelCounts.forEach( log => {
       resultString += `${channel.guild.channels.get(log.id).name}: ${log.count}\n`
     });
