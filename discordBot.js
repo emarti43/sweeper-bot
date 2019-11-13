@@ -216,15 +216,14 @@ async function displayChannels(channel) {
 }
 
 async function showChannelActivity(channel) {
-  let channels = await psqlHelper.getChannelActivity(await getServer(channel).id);
-  let date = new Date();
-  let resultString = `**Channel Frequencies:**\n`;
-  resultString = channels.reduce( (result, element) => {
-    let formattedDate = element.last_cycle.split('/');
-    formattedDate = new Date(formattedDate[1], formattedDate[0]);
-    let row = channel.guild.channels.get(element.channel_id).name.padEnd(30, " ") +  element.message_count.toString().padEnd(5, ' ') + formattedDate.getMonth() + "/" + formattedDate.getFullYear() + '\n';
-    return result + row;
-    }, resultString);
+  let response = await psqlHelper.getChannelActivity(await getServer(channel).id);
+  let resultString = '';
+  response.forEach( element => {
+    resultString += `Month of **${element.month}** ${element.year}\n`;
+    element.channelCounts.forEach( log => {
+      resultString += `${channel.guild.channels.get(log.id).name}: ${log.count}\n`
+    });
+  })
   channel.send(resultString);
 }
 

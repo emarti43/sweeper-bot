@@ -24,14 +24,52 @@ class PostgresHelper {
     }
   }
 
+  // RESPONSE FORMAT
+  // Example Response:
+  // [
+  //   {
+  //     month: "November",
+  //     year: "2019",
+  //     channelCounts: [
+  //       {
+  //         id: "237894572038290",
+  //         count: 45
+  //       },
+  //       {
+  //         id: "237894572038290",
+  //         count: 45
+  //       }
+  //     ]
+  //   }
+  // ]
+
   async getChannelActivity(serverId) {
     try {
-      var response = await this.pool.query('SELECT * FROM channel_activity WHERE server_id = $1;', [serverId])
+      var queryResponse = await this.pool.query('SELECT * FROM channel_activity WHERE server_id = $1 ORDER BY last_cycle;', [serverId])
     } catch (error) {
       console.log(error);
     }
-    if(response.rowCount > 0) return response.rows;
-    else return [];
+    if (queryResponse.rowCount <= 0) return [];
+    else {
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      let response = [];
+      let temp = null;
+      queryResponse.rows.forEach( element => {
+        let [month, year] = element.last_cycle.split('/');
+        month = monthNames[month];
+        if (temp === null || month !== temp.month || year !== temp.year) {
+          if (temp !== null) response.push(temp);
+          temp = {
+            month: month,
+            year: year,
+            channelCounts: []
+          };
+        }
+        temp.channelCounts.push({id: element.channel_id, count: element.message_count});
+      });
+      response.push(temp);
+      return response;
+    }
   }
 
   async isMonitoredChannel(channelId, serverId) {
