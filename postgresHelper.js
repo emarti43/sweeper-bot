@@ -15,6 +15,15 @@ class PostgresHelper {
     return false;
   }
 
+  async initActivity(channelId, serverId) {
+    try {
+      let date = new Date();
+      this.pool.query('INSERT INTO channel_activity(channel_id, server_id, message_count, last_cycle) VALUES($1, $2, $3, $4) ON CONFLICT (server_id, channel_id, last_cycle) DO UPDATE SET message_count = channel_activity.message_count + 1;', [channelId, serverId, 0, '' + date.getMonth() + '/' + date.getFullYear()]);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   async logActivity(channelId, serverId) {
     try {
       let date = new Date();
@@ -74,7 +83,7 @@ class PostgresHelper {
 
   async isMonitoredChannel(channelId, serverId) {
     try {
-      var response = await this.pool.query('SELECT * FROM allowedchannels WHERE channel_id = $1 AND server_id = $2;', [channelId, serverId]);
+      var response = await this.pool.query('SELECT * FROM monitored_channels WHERE channel_id = $1 AND server_id = $2;', [channelId, serverId]);
     } catch (error) {
       console.log(error);
     }
@@ -84,7 +93,7 @@ class PostgresHelper {
 
   async getScrapingCheckpoint(serverId, channelId) {
     try {
-      var response = await this.pool.query('SELECT scraping_checkpoint FROM allowedchannels WHERE server_id = $1 AND channel_id = $2;', [serverId, channelId]);
+      var response = await this.pool.query('SELECT scraping_checkpoint FROM monitored_channels WHERE server_id = $1 AND channel_id = $2;', [serverId, channelId]);
     } catch(err) {
       console.log(err);
     }
@@ -110,7 +119,7 @@ class PostgresHelper {
 
   async updateScrapingCheckpoint(serverId, channelId, scrapingCheckpoint) {
     try{
-      var res = await this.pool.query('INSERT INTO allowedchannels(server_id, channel_id, scraping_checkpoint) VALUES($1, $2, $3) ON CONFLICT (server_id, channel_id) DO UPDATE SET scraping_checkpoint = EXCLUDED.scraping_checkpoint;', [serverId, channelId, scrapingCheckpoint]);
+      var res = await this.pool.query('INSERT INTO monitored_channels(server_id, channel_id, scraping_checkpoint) VALUES($1, $2, $3) ON CONFLICT (server_id, channel_id) DO UPDATE SET scraping_checkpoint = EXCLUDED.scraping_checkpoint;', [serverId, channelId, scrapingCheckpoint]);
     } catch (err) {
       console.log(err);
     }
@@ -156,9 +165,9 @@ class PostgresHelper {
   async fetchChannels(serverId) {
     try {
       if (serverId) {
-        var response = await this.pool.query('SELECT * FROM allowedchannels WHERE server_id = $1;', [serverId]);
+        var response = await this.pool.query('SELECT * FROM monitored_channels WHERE server_id = $1;', [serverId]);
       } else {
-        var response = await this.pool.query('SELECT * FROM allowedchannels;');
+        var response = await this.pool.query('SELECT * FROM monitored_channels;');
       }
     } catch(err) {
       console.log(err);
@@ -175,7 +184,7 @@ class PostgresHelper {
 
   async addAllowedChannel(targetChannel) {
     try {
-      await this.pool.query('INSERT INTO allowedchannels(server_id, user_id) VALUES($1, $2);', [targetChannel.id, await getServer(targetChannel).id]);
+      await this.pool.query('INSERT INTO monitored_channels(server_id, user_id) VALUES($1, $2);', [targetChannel.id, await getServer(targetChannel).id]);
     } catch(err) {
       console.log(err);
     }
