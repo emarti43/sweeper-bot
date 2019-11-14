@@ -18,7 +18,7 @@ class PostgresHelper {
   async initActivity(channelId, serverId) {
     try {
       let date = new Date();
-      this.pool.query('INSERT INTO channels(channel_id, server_id, message_count, last_cycle) VALUES($1, $2, $3, $4) ON CONFLICT (server_id, channel_id, last_cycle) DO UPDATE SET message_count = channels.message_count + 1;', [channelId, serverId, 0, '' + date.getMonth() + '/' + date.getFullYear()]);
+      this.pool.query('INSERT INTO channel_logs(channel_id, server_id, message_count, last_cycle) VALUES($1, $2, $3, $4) ON CONFLICT (server_id, channel_id, last_cycle) DO UPDATE SET message_count = channel_logs.message_count + 1;', [channelId, serverId, 0, '' + date.getMonth() + '/' + date.getFullYear()]);
     } catch (error) {
       console.log(error);
     }
@@ -26,7 +26,7 @@ class PostgresHelper {
 
   async removeChannel(channelId, serverId) {
     try {
-      this.pool.query('DELETE FROM channels WHERE channel_id = $1 AND server_id = $2', [channelId, serverId]);
+      this.pool.query('DELETE FROM channel_logs WHERE channel_id = $1 AND server_id = $2', [channelId, serverId]);
     } catch(error) {
       console.log(error)
     }
@@ -35,7 +35,7 @@ class PostgresHelper {
   async logActivity(channelId, serverId) {
     try {
       let date = new Date();
-      this.pool.query('INSERT INTO channels(channel_id, server_id, message_count, last_cycle) VALUES($1, $2, $3, $4) ON CONFLICT (server_id, channel_id, last_cycle) DO UPDATE SET message_count = channels.message_count + 1;', [channelId, serverId, 1, '' + date.getMonth() + '/' + date.getFullYear()]);
+      this.pool.query('INSERT INTO channel_logs(channel_id, server_id, message_count, last_cycle) VALUES($1, $2, $3, $4) ON CONFLICT (server_id, channel_id, last_cycle) DO UPDATE SET message_count = channel_logs.message_count + 1;', [channelId, serverId, 1, '' + date.getMonth() + '/' + date.getFullYear()]);
     } catch (error) {
       console.log(error);
     }
@@ -62,7 +62,7 @@ class PostgresHelper {
 
   async getChannelActivity(serverId) {
     try {
-      var queryResponse = await this.pool.query('SELECT * FROM channels WHERE server_id = $1 ORDER BY last_cycle, message_count DESC;', [serverId])
+      var queryResponse = await this.pool.query('SELECT * FROM channel_logs WHERE server_id = $1 ORDER BY last_cycle, message_count DESC;', [serverId])
     } catch (error) {
       console.log(error);
     }

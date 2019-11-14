@@ -285,7 +285,6 @@ client.on('channelCreate', channel => {
 
 client.on('channelDelete', channel => {
   logger(`[${channel.guild.name}] Channel ${channel.name} is deleted`);
-  psqlHelper.removeChannel(channel.id, channel.guild.id);
 })
 
 
