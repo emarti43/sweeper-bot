@@ -233,6 +233,7 @@ function messageChunker(s) {
 
 function sendChunkedMessage(channel, s) {
   let chunks = messageChunker(s);
+  logger(chunks);
   chunks.forEach( chunk => {
     MessageResponse(channel, chunk);
   });
