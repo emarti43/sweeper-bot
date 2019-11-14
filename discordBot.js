@@ -279,10 +279,12 @@ client.on('ready', () => {
 
 // Initializes channel message count on creation
 client.on('channelCreate', channel => {
+  logger(`[${channel.guild.name}] Channel ${channel.name} is created`);
   psqlHelper.initActivity(channel.id, channel.guild.id);
 });
 
 client.on('channelDelete', channel => {
+  logger(`[${channel.guild.name}] Channel ${channel.name} is deleted`);
   psqlHelper.removeChannel(channel.id, channel.guild.id);
 })
 
