@@ -229,6 +229,7 @@ function messageChunker(s) {
       start = i;
     }
   }
+  chunks.push(s.slice(start, s.length -1));
   return chunks;
 }
 
