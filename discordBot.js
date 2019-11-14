@@ -247,7 +247,8 @@ async function showChannelActivity(channel) {
   response.forEach( element => {
     resultString += `**Month of ${element.month} ${element.year}**\n`;
     element.channelCounts.forEach( log => {
-      resultString += `__${channel.guild.channels.get(log.id).name}__:   ${log.count}\n`
+      let channelName = channel.guild.channels.get(log.id).name;
+      resultString += `__${channelName ? channelName : "Deleted Channel"}__:   ${log.count}\n`
     });
   });
   sendChunkedMessage(channel, resultString);
