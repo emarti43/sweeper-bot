@@ -216,6 +216,7 @@ async function displayChannels(channel) {
 }
 CHARACTER_LIMIT = 2000;
 function messageChunker(s) {
+  logger(s);
   let start = 0;
   let chunks = [];
   let lookahead = 0;
