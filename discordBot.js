@@ -249,7 +249,7 @@ async function showChannelActivity(channel) {
     element.channelCounts.forEach( log => {
       resultString += `__${channel.guild.channels.get(log.id).name}__:   ${log.count}\n`
     });
-  })
+  });
   sendChunkedMessage(channel, resultString);
 }
 
@@ -276,6 +276,15 @@ client.on('ready', () => {
   scrapeChannels();
   continuePurges();
 });
+
+// Initializes channel message count on creation
+client.on('channelCreate', channel => {
+  psqlHelper.initActivity(channel.id, channel.guild.id);
+});
+
+client.on('channelDelete', channel => {
+  psqlHelper.removeChannel(channel.id, channel.guild.id);
+})
 
 
 client.on('message', message => {

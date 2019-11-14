@@ -24,6 +24,14 @@ class PostgresHelper {
     }
   }
 
+  async removeChannel(channelId, serverId) {
+    try {
+      this.pool.query('DELETE FROM channels WHERE channel_id = $1 AND server_id = $2', [channelId, serverId]);
+    } catch(error) {
+      console.log(error)
+    }
+  }
+
   async logActivity(channelId, serverId) {
     try {
       let date = new Date();
