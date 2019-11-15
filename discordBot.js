@@ -3,7 +3,7 @@ const COMMAND_DESCRIPTIONS = require('./commands.js');
 require('dotenv').config()
 const Discord = require('discord.js');
 const logger = require('debug')('logs');
-const http = require('http');
+const axios = require('axios');
 const { Pool, Client } = require('pg');
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -250,17 +250,18 @@ async function showChannelActivity(channel) {
       channelLog.name = existingChannel ? '#' + existingChannel.name : '#Deleted Channel';
     });
   });
-  const options = {
-    method: 'POST',
-    host: clientAddress,
-    path: '/servers/logs/' + channel.guild.id,
-    body: {
+  axios({
+    method: 'post',
+    url: `http://${clientAddress}/servers/logs/${channel.guild.id}`,
+    data: {
       name: channel.guild.name,
       logs: response
     }
-  }
-  const req = http.request(options);
-  req.end();
+  }).then( response => {
+    logger(response);
+  }).catch( error => {
+    logger(error);
+  });
   MessageResponse(channel, 'http://' + clientAddress + '/servers/' + channel.guild.id);
 }
 
