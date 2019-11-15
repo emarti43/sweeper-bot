@@ -79,10 +79,10 @@ class PostgresHelper {
           temp = {
             month: month,
             year: year,
-            channelCounts: []
+            channels: []
           };
         }
-        temp.channelCounts.push({id: element.channel_id, count: element.message_count});
+        temp.channels.push({id: element.channel_id, count: element.message_count});
       });
       response.push(temp);
       return response;

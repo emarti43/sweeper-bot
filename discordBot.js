@@ -245,7 +245,7 @@ function sendChunkedMessage(channel, s) {
 async function showChannelActivity(channel) {
   let response = await psqlHelper.getChannelActivity(await getServer(channel).id);
   response.forEach(element => {
-    element.channelCounts.forEach(channelLog => {
+    element.channels.forEach(channelLog => {
       let existingChannel = channel.guild.channels.get(channelLog.id);
       channelLog.name = existingChannel ? '#' + existingChannel.name : '#Deleted Channel';
     });
