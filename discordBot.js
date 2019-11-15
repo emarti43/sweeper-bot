@@ -1,19 +1,20 @@
 const PostgresHelper = require('./postgresHelper.js');
 const COMMAND_DESCRIPTIONS = require('./commands.js');
 require('dotenv').config()
-
 const Discord = require('discord.js');
 const logger = require('debug')('logs');
-const  { Pool, Client } = require('pg');
+const http = require('http');
+const { Pool, Client } = require('pg');
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: true,
 });
 
+const clientAddress = process.env.CLIENT_ADDRESS;
+
 const END_OF_PURGE = '0';
 const client = new Discord.Client();
 const psqlHelper = new PostgresHelper(pool, client);
-var messageRateFrequencies = {};
 
 function attemptCommand(caller, args) {
   try {
@@ -243,21 +244,29 @@ function sendChunkedMessage(channel, s) {
 
 async function showChannelActivity(channel) {
   let response = await psqlHelper.getChannelActivity(await getServer(channel).id);
-  let resultString = '';
-  response.forEach( element => {
-    resultString += `**Month of ${element.month} ${element.year}**\n`;
-    element.channelCounts.forEach( log => {
-      let foundChannel = channel.guild.channels.get(log.id);
-      resultString += `__${foundChannel ? foundChannel.name : "Deleted Channel"}__:   ${log.count}\n`
+  response.logs.forEach(element => {
+    element.channelCounts.forEach(channelLog => {
+      channelLog.name = channel.guild.get(channelLog.id).name;
     });
   });
-  sendChunkedMessage(channel, resultString);
+  const options = {
+    method: 'POST',
+    host: clientAddress,
+    path: '/servers/logs/' + channel.guild.id,
+    body: {
+      name: channel.guild.name,
+      logs: response
+    }
+  }
+  const req = http.request(options);
+  req.end();
+  MessageResponse(channel, 'http://' + clientAddress + '/servers/' + channe.guild.id);
 }
 
 async function MessageResponse(channel, content) {
-  channel.startTyping();
+  await channel.startTyping();
   await channel.send(content);
-  channel.stopTyping();
+  await channel.stopTyping();
 }
 
 async function showHelp(channel) {
