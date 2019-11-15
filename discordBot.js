@@ -261,7 +261,7 @@ async function showChannelActivity(channel) {
   }
   const req = http.request(options);
   req.end();
-  MessageResponse(channel, 'http://' + clientAddress + '/servers/' + channe.guild.id);
+  MessageResponse(channel, 'http://' + clientAddress + '/servers/' + channel.guild.id);
 }
 
 async function MessageResponse(channel, content) {
