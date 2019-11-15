@@ -247,7 +247,7 @@ async function showChannelActivity(channel) {
   response.forEach(element => {
     element.channelCounts.forEach(channelLog => {
       let existingChannel = channel.guild.channels.get(channelLog.id);
-      channelLog.name = exisitingChannel ? '#' + existingChannel.name : '#Deleted Channel';
+      channelLog.name = existingChannel ? '#' + existingChannel.name : '#Deleted Channel';
     });
   });
   const options = {
