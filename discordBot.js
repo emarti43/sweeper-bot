@@ -246,7 +246,7 @@ async function showChannelActivity(channel) {
   let response = await psqlHelper.getChannelActivity(await getServer(channel).id);
   response.forEach(element => {
     element.channelCounts.forEach(channelLog => {
-      channelLog.name = channel.guild.get(channelLog.id).name;
+      channelLog.name = channel.guild.channels.get(channelLog.id).name;
     });
   });
   const options = {
