@@ -246,8 +246,8 @@ async function showChannelActivity(channel) {
   let response = await psqlHelper.getChannelActivity(await getServer(channel).id);
   response.forEach(element => {
     element.channelCounts.forEach(channelLog => {
-      console.log(channelLog.id);
-      channelLog.name = channel.guild.channels.get(channelLog.id).name;
+      let existingChannel = channel.guild.channels.get(channelLog.id);
+      channelLog.name = exisitingChannel ? '#' + existingChannel.name : '#Deleted Channel';
     });
   });
   const options = {
