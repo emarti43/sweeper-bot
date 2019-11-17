@@ -22,7 +22,7 @@ function attemptCommand(caller, args) {
   try {
     return caller(...args);
   } catch(e) {
-    logger('%o : %o', caller.name, e.message);
+    logger('COMMAND HAS FAILED %o : %o', caller.name, e.message);
   }
 }
 
@@ -76,7 +76,7 @@ async function configureParams(serverId, channelId) {
   return params;
 }
 
-async function deleteImages(targetUser, targetChannel) {
+async function purgeImages(targetUser, targetChannel) {
   logger('Purge initiated for %o', targetUser.username);
   try {
     var serverId = await targetChannel.guild.id;
@@ -124,7 +124,7 @@ async function continuePurges() {
     for(let i = 0; i < res.rows.length; i++) {
       let targetUser = await client.fetchUser(res.rows[i].user_id);
       let targetChannel = await client.channels.get(res.rows[i].channel_id);
-      deleteImages(targetUser, targetChannel);
+      purgeImages(targetUser, targetChannel);
       await sleep(10000);
     }
   } catch(err) {
@@ -203,7 +203,7 @@ async function formatChannels(channels) {
   return result;
 }
 
-async function displayChannels(channel) {
+async function showMonitoredChannels(channel) {
   let server = await channel.guild;
   let channels = await psqlHelper.fetchChannels(server.id);
   logger(channels.map( c => c.name));
@@ -276,6 +276,12 @@ async function showHelp(channel) {
   });
   MessageResponse(channel, content);
 }
+async function setSweeper(userId, channel) {
+  psqlHelper.setImageSweep(userId, channel.id);
+}
+async function addChannel(channel) {
+  psqlHelper.addMonitoredChannel(channel.guild.id, channel.id);
+}
 
 // BOT COMMANDS AND EVENTS
 
@@ -302,24 +308,24 @@ client.on('message', message => {
       if (parseChannel(args[1])) {
         if (attemptCommand(queuePurge, [message.author.id, parseChannel(args[1]).id])) {
            MessageResponse(message.channel, '⏱ Starting Purge. You will be messaged when the purge is done (hopefully) ⏱');
-          attemptCommand(deleteImages, [message.author, parseChannel(args[1])]);
+          attemptCommand(purgeImages, [message.author, parseChannel(args[1])]);
         } else  MessageResponse(message.channel, "I'm on it 😅");
       }
       break;
     case '!set_sweeper':
-      if(parseChannel(args[1])) {
-         MessageResponse(message.channel, '🧹 Cleaning up after your mess! 🧹');
-        attemptCommand(psqlHelper.setImageSweep, [parseChannel(args[1]), message.author.id, message.channel.id]);
+      if (parseChannel(args[1])) {
+        MessageResponse(message.channel, '🧹 Cleaning up after your mess! 🧹');
+        attemptCommand(setSweeper, [message.author.id, parseChannel(args[1]).id]);
       }
       break;
     case '!add_channel':
       if (parseChannel(args[1]) && message.member.hasPermission('ADMINISTRATOR')) {
-        attemptCommand(psqlHelper.addAllowedChannel, [parseChannel(args[1])]);
-        attemptCommand(scrapeImages, [message.channel])
+        attemptCommand(addChannel, [parseChannel(args[1])]);
+        attemptCommand(scrapeImages, [message.channel]);
       }
       break;
-    case '!list_channels':
-      attemptCommand(displayChannels, [message.channel]);
+    case '!show_monitored_channels':
+      attemptCommand(showMonitoredChannels, [message.channel]);
       break;
     case '!show_channel_activity':
       attemptCommand(showChannelActivity, [message.channel]);

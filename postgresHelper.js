@@ -190,9 +190,9 @@ class PostgresHelper {
     return channels;
   }
 
-  async addAllowedChannel(targetChannel) {
+  async addMonitoredChannel(serverId, channelId) {
     try {
-      await this.pool.query('INSERT INTO monitored_channels(server_id, user_id) VALUES($1, $2);', [targetChannel.id, await getServer(targetChannel).id]);
+      await this.pool.query('INSERT INTO monitored_channels(server_id, channel_id) VALUES($1, $2);', [serverId, channelId]);
     } catch(err) {
       console.log(err);
     }
