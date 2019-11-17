@@ -1,5 +1,4 @@
 const PostgresHelper = require('./postgresHelper.js');
-const COMMAND_DESCRIPTIONS = require('./commands.js');
 require('dotenv').config()
 const Discord = require('discord.js');
 const logger = require('debug')('logs');
@@ -10,11 +9,14 @@ const pool = new Pool({
   ssl: true,
 });
 
-const clientAddress = process.env.CLIENT_ADDRESS;
 
+const clientAddress = process.env.CLIENT_ADDRESS;
 const END_OF_PURGE = '0';
+const COMMAND_DESCRIPTIONS = require('./commandDescriptions.js');
 const client = new Discord.Client();
 const psqlHelper = new PostgresHelper(pool, client);
+const CHARACTER_LIMIT = 2000;
+
 
 function attemptCommand(caller, args) {
   try {
@@ -211,7 +213,7 @@ async function displayChannels(channel) {
     channel.send('No channels are being tracked. Please use !add_channel to begin tracking a channel\'s history');
   }
 }
-CHARACTER_LIMIT = 2000;
+
 function messageChunker(s) {
   logger(s);
   let start = 0;
