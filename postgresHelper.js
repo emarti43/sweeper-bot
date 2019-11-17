@@ -209,7 +209,6 @@ class PostgresHelper {
     } catch(err) {
       console.log(err);
     }
-    scrapeImages(targetChannel);
   }
 }
 module.exports = PostgresHelper;

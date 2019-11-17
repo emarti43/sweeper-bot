@@ -2,12 +2,11 @@ const PostgresHelper = require('./postgresHelper.js');
 require('dotenv').config()
 const Discord = require('discord.js');
 const logger = require('debug')('logs');
-const axios = require('axios');
 
 const SweeperCommands = require('./commands.js');
 const botHelper = require('./botHelper.js');
 
-const clientAddress = process.env.CLIENT_ADDRESS;
+
 const END_OF_PURGE = '0';
 const COMMAND_DESCRIPTIONS = require('./commandDescriptions.js');
 const client = new Discord.Client();
@@ -191,75 +190,6 @@ async function queuePurge(userId, channelId) {
   return true;
 }
 
-async function formatChannels(channels) {
-  let result = '**Monitored Channels:**\n'
-  for(let i = 0; i < channels.length; i++) {
-    result += `${channels[i]} \n`;
-  }
-  result += 'Call \`!add_channel <Channel>\` to add another channel \n(needs admin permissions)'
-  return result;
-}
-
-async function showMonitoredChannels(channel) {
-  let server = await channel.guild;
-  let channels = await psqlHelper.fetchChannels(server.id);
-  logger(channels.map( c => c.name));
-  if (channels.length > 0) {
-    channel.send(await formatChannels(channels));
-  } else {
-    channel.send('No channels are being tracked. Please use !add_channel to begin tracking a channel\'s history');
-  }
-}
-
-function messageChunker(s) {
-  logger(s);
-  let start = 0;
-  let chunks = [];
-  let lookahead = 0;
-  for( let i = 0; i < s.length; i = lookahead) {
-    lookahead = i + 1;
-    while (s[lookahead] !== '\n' && lookahead < s.length) lookahead++;
-    if (lookahead - start > CHARACTER_LIMIT) {
-      let chunk = s.slice(start, i);
-      chunks.push(chunk)
-      start = i;
-    }
-  }
-  chunks.push(s.slice(start, s.length -1));
-  return chunks;
-}
-
-function sendChunkedMessage(channel, s) {
-  let chunks = messageChunker(s);
-  logger(chunks);
-  chunks.forEach( chunk => {
-    botHelper.MessageResponse(channel, chunk);
-  });
-}
-
-async function showChannelActivity(channel) {
-  let response = await psqlHelper.getChannelActivity(channel.guild.id);
-  response.forEach(element => {
-    element.channels.forEach(channelLog => {
-      let existingChannel = channel.guild.channels.get(channelLog.id);
-      channelLog.name = existingChannel ? '#' + existingChannel.name : '#Deleted Channel';
-    });
-  });
-  axios({
-    method: 'post',
-    url: `http://${clientAddress}/servers/logs/${channel.guild.id}`,
-    data: {
-      name: channel.guild.name,
-      logs: response
-    }
-  }).then( response => {
-    logger(response);
-  }).catch( error => {
-    logger(error);
-  });
-  botHelper.MessageResponse(channel, 'http://' + clientAddress + '/servers/' + channel.guild.id);
-}
-
 async function setSweeper(userId, channel) {
   psqlHelper.setImageSweep(userId, channel.id);
 }
@@ -276,12 +206,23 @@ client.on('ready', () => {
 });
 
 client.on('channelCreate', channel => {
-  logger(`[${channel.guild.name}] Channel ${channel.name} is created`);
-  psqlHelper.initActivity(channel.id, channel.guild.id);
+  try {
+    logger(`[${channel.guild.name}] Channel ${channel.name} is created`);
+    psqlHelper.initActivity(channel.id, channel.guild.id);
+  } catch (error) {
+    logger("Error on channelCreate event:");
+    logger(error);
+  }
+  
 });
 
 client.on('channelDelete', channel => {
-  logger(`[${channel.guild.name}] Channel ${channel.name} is deleted`);
+  try {
+    logger(`[${channel.guild.name}] Channel ${channel.name} is deleted`);
+  } catch (error) {
+    logger("Error on channelDelete event:");
+    logger(error);
+  }
 })
 
 
@@ -309,10 +250,10 @@ client.on('message', message => {
       }
       break;
     case '!show_monitored_channels':
-      attemptCommand(showMonitoredChannels, [message.channel]);
+      attemptCommand(SweeperCommands.showMonitoredChannels, [psqlHelper, message.channel]);
       break;
     case '!show_channel_activity':
-      attemptCommand(showChannelActivity, [message.channel]);
+      attemptCommand(SweeperCommands.showChannelActivity, [psqlHelper, message.channel]);
       break;
     case '!help':
       attemptCommand(SweeperCommands.showHelp, [message.channel]);
