@@ -44,13 +44,9 @@ function getTimestampDate(date) {
               + currentdate.getSeconds();
 }
 
-function getServer(targetChannel) {
-  return client.guilds.find(guild => guild.channels.has(targetChannel.id));
-}
-
 
 async function processMessage(message) {
-  psqlHelper.logActivity(message.channel.id, await getServer(message.channel).id);
+  psqlHelper.logActivity(message.channel.id, await message.channel.guild.id);
   let isSweepable = await psqlHelper.isSweepableChannel(message);
   logger('Retrieved Message from %o  %o', message.channel.name, getTimestampDate());
   if (message.attachments.size > 0) {
@@ -60,7 +56,7 @@ async function processMessage(message) {
       message.delete();
       logger('message has been deleted in %o', channelName);
     } else {
-      let serverId = await getServer(message.channel).id;
+      let serverId = await message.channel.guild.id;
       if (await psqlHelper.isMonitoredChannel(message.channel.id, serverId)) {
         logger('storing message %o from %o', getTimestampDate(), message.channel.name);
         psqlHelper.storeImage(message.id, message.channel.id, serverId, message.author.id);
@@ -81,7 +77,7 @@ async function configureParams(serverId, channelId) {
 async function deleteImages(targetUser, targetChannel) {
   logger('Purge initiated for %o', targetUser.username);
   try {
-    var serverId = await getServer(targetChannel).id;
+    var serverId = await targetChannel.guild.id;
     var response = await psqlHelper.fetchImages(targetUser.id, targetChannel.id, serverId);
   } catch (error) {
     logger(error);
@@ -135,7 +131,7 @@ async function continuePurges() {
 }
 
 async function scrapeImages(targetChannel) {
-  let serverId = await getServer(targetChannel).id;
+  let serverId = await targetChannel.guild.id;
   let params = await configureParams(serverId, targetChannel.id);
   let imageCount = 0;
 
@@ -206,7 +202,7 @@ async function formatChannels(channels) {
 }
 
 async function displayChannels(channel) {
-  let server = await getServer(channel);
+  let server = await channel.guild;
   let channels = await psqlHelper.fetchChannels(server.id);
   logger(channels.map( c => c.name));
   if (channels.length > 0) {
@@ -243,7 +239,7 @@ function sendChunkedMessage(channel, s) {
 }
 
 async function showChannelActivity(channel) {
-  let response = await psqlHelper.getChannelActivity(await getServer(channel).id);
+  let response = await psqlHelper.getChannelActivity(channel.guild.id);
   response.forEach(element => {
     element.channels.forEach(channelLog => {
       let existingChannel = channel.guild.channels.get(channelLog.id);
@@ -279,17 +275,14 @@ async function showHelp(channel) {
   MessageResponse(channel, content);
 }
 
+// BOT COMMANDS AND EVENTS
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * BOT COMMANDS AND EVENTS
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 client.on('ready', () => {
   logger('Starting bot up. Ready to receive connections...');
   scrapeChannels();
   continuePurges();
 });
 
-// Initializes channel message count on creation
 client.on('channelCreate', channel => {
   logger(`[${channel.guild.name}] Channel ${channel.name} is created`);
   psqlHelper.initActivity(channel.id, channel.guild.id);
