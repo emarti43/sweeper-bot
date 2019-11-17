@@ -3,18 +3,15 @@ require('dotenv').config()
 const Discord = require('discord.js');
 const logger = require('debug')('logs');
 const axios = require('axios');
-const { Pool, Client } = require('pg');
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: true,
-});
 
+const SweeperCommands = require('./commands.js');
+const botHelper = require('./botHelper.js');
 
 const clientAddress = process.env.CLIENT_ADDRESS;
 const END_OF_PURGE = '0';
 const COMMAND_DESCRIPTIONS = require('./commandDescriptions.js');
 const client = new Discord.Client();
-const psqlHelper = new PostgresHelper(pool, client);
+const psqlHelper = new PostgresHelper(client);
 const CHARACTER_LIMIT = 2000;
 
 
@@ -236,7 +233,7 @@ function sendChunkedMessage(channel, s) {
   let chunks = messageChunker(s);
   logger(chunks);
   chunks.forEach( chunk => {
-    MessageResponse(channel, chunk);
+    botHelper.MessageResponse(channel, chunk);
   });
 }
 
@@ -260,22 +257,9 @@ async function showChannelActivity(channel) {
   }).catch( error => {
     logger(error);
   });
-  MessageResponse(channel, 'http://' + clientAddress + '/servers/' + channel.guild.id);
+  botHelper.MessageResponse(channel, 'http://' + clientAddress + '/servers/' + channel.guild.id);
 }
 
-async function MessageResponse(channel, content) {
-  await channel.startTyping();
-  await channel.send(content);
-  await channel.stopTyping();
-}
-
-async function showHelp(channel) {
-  let content = ''
-  await Object.keys(COMMAND_DESCRIPTIONS).forEach( commandName => {
-    content +=`\`${commandName}\` - ${COMMAND_DESCRIPTIONS[commandName]} \n`;
-  });
-  MessageResponse(channel, content);
-}
 async function setSweeper(userId, channel) {
   psqlHelper.setImageSweep(userId, channel.id);
 }
@@ -307,14 +291,14 @@ client.on('message', message => {
     case '!purge_images':
       if (parseChannel(args[1])) {
         if (attemptCommand(queuePurge, [message.author.id, parseChannel(args[1]).id])) {
-           MessageResponse(message.channel, '⏱ Starting Purge. You will be messaged when the purge is done (hopefully) ⏱');
+          botHelper.MessageResponse(message.channel, '⏱ Starting Purge. You will be messaged when the purge is done (hopefully) ⏱');
           attemptCommand(purgeImages, [message.author, parseChannel(args[1])]);
-        } else  MessageResponse(message.channel, "I'm on it 😅");
+        } else botHelper.MessageResponse(message.channel, "I'm on it 😅");
       }
       break;
     case '!set_sweeper':
       if (parseChannel(args[1])) {
-        MessageResponse(message.channel, '🧹 Cleaning up after your mess! 🧹');
+        botHelper.MessageResponse(message.channel, '🧹 Cleaning up after your mess! 🧹');
         attemptCommand(setSweeper, [message.author.id, parseChannel(args[1]).id]);
       }
       break;
@@ -331,7 +315,7 @@ client.on('message', message => {
       attemptCommand(showChannelActivity, [message.channel]);
       break;
     case '!help':
-      attemptCommand(showHelp, [message.channel]);
+      attemptCommand(SweeperCommands.showHelp, [message.channel]);
       break;
     default:
       processMessage(message);
