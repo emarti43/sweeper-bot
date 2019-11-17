@@ -117,7 +117,7 @@ function parseChannel(text) {
 async function continuePurges() {
   try {
     logger('Restarting Purges');
-    var res =  await pool.query('SELECT * FROM checkpoints;');
+    var res = await psqlHelper.getAllCheckpoints();
     for(let i = 0; i < res.rows.length; i++) {
       let targetUser = await client.fetchUser(res.rows[i].user_id);
       let targetChannel = await client.channels.get(res.rows[i].channel_id);

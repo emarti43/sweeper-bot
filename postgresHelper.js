@@ -114,16 +114,25 @@ class PostgresHelper {
 
   async getUserCheckpoint(userId, channelId) {
     try {
-      var response = await pool.query('SELECT * FROM checkpoints WHERE checkpoints.user_id = $1 AND checkpoints.channel_id = $2;', [userId, channelId]);
+      var response = await this.pool.query('SELECT * FROM checkpoints WHERE checkpoints.user_id = $1 AND checkpoints.channel_id = $2;', [userId, channelId]);
     } catch(err) {
       console.log(err);
     }
     return response;
   }
+  async getAllCheckpoints() {
+    try {
+      var res = await this.pool.query('SELECT * FROM checkpoints;');
+    } catch(error) {
+      console.log(error);
+    }
+    return res;
+    
+  }
 
   async insertUserCheckpoint(userId, channelId) {
     try {
-      await pool.query('INSERT into checkpoints(user_id, last_checkpoint, channel_id, total_images) VALUES ($1, $2, $3, $4);', [userId, ' ', channelId, 0]);
+      await this.pool.query('INSERT into checkpoints(user_id, last_checkpoint, channel_id, total_images) VALUES ($1, $2, $3, $4);', [userId, ' ', channelId, 0]);
     } catch(err) {
       console.log(err);
     }
