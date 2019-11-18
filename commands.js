@@ -4,6 +4,7 @@ const botHelper = require('./botHelper.js');
 const clientAddress = process.env.CLIENT_ADDRESS;
 const axios = require('axios');
 const logger = require('debug')('logs');
+const END_OF_PURGE = '0';
 
 exports.showHelp = function(channel) {
     logger("showing help");
@@ -31,7 +32,7 @@ exports.showChannelActivity = async function(psqlHelper, channel) {
             logs: response
         }
     }).then(response => {
-        logger(response);
+        logger("Channel Activity successfully posted");
     }).catch(error => {
         logger(error);
     });
@@ -47,4 +48,36 @@ exports.showMonitoredChannels = async function (psqlHelper, channel) {
     } else {
         channel.send('No channels are being tracked. Please use !add_channel to begin tracking a channel\'s history');
     }
+}
+
+exports.purgeImages = async function (psqlHelper, targetUser, targetChannel) {
+    logger('Purge initiated for %o', targetUser.username);
+    try {
+        var serverId = await targetChannel.guild.id;
+        var response = await psqlHelper.fetchImages(targetUser.id, targetChannel.id, serverId);
+    } catch (error) {
+        logger(error);
+    }
+
+    let imageCount = 0;
+    if (response.rows) {
+        imageCount = response.rows.length;
+        for (let i = 0; i < response.rows.length; i++) {
+            try {
+                var message = await targetChannel.fetchMessage(response.rows[i].message_id);
+            } catch (err) {
+                logger('fetched nonexistent key');
+                psqlHelper.deleteImage(response.rows[i].message_id, targetChannel.id, serverId);
+                continue;
+            }
+            if (message) {
+                message.delete();
+                logger('Deleting image for %o (%o out of %o).', targetUser.username, (i + 1), imageCount);
+                psqlHelper.deleteImage(message.id, targetChannel.id, serverId);
+            }
+            await botHelper.sleep(1000);
+        }
+    }
+    await psqlHelper.removeUserCheckpoint(targetUser, targetChannel);
+    targetUser.send(`Hi ${targetUser.username}. I've deleted ${imageCount} images from ${targetChannel.name}. Please check if any recent images you've uploaded are not deleted.`);
 }
