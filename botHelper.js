@@ -1,5 +1,7 @@
 const logger = require('debug')('logs');
 const CHARACTER_LIMIT = 2000;
+const END_OF_SCRAPE = '0';
+
 
 exports.MessageResponse = async function MessageResponse(channel, content) {
     await channel.startTyping();
@@ -71,7 +73,7 @@ exports.scrapeImages = async function (psqlHelper, targetChannel) {
     let params = await configureParams(psqlHelper, serverId, targetChannel.id);
     let imageCount = 0;
 
-    if (params.before === END_OF_PURGE) {
+    if (params.before === END_OF_SCRAPE) {
         logger('Images have been scraped');
         return;
     }
@@ -111,5 +113,5 @@ exports.scrapeImages = async function (psqlHelper, targetChannel) {
         logger('Scraping Images from %o [%o total] %o', targetChannel.name, imageCount, exports.getTimestampDate(timestamp));
     }
     logger(`Scraped all messages from ${targetChannel.name}`);
-    psqlHelper.updateScrapingCheckpoint(serverId, targetChannel.id, END_OF_PURGE);
+    psqlHelper.updateScrapingCheckpoint(serverId, targetChannel.id, END_OF_SCRAPE);
 }

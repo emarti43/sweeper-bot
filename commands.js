@@ -4,7 +4,6 @@ const botHelper = require('./botHelper.js');
 const clientAddress = process.env.CLIENT_ADDRESS;
 const axios = require('axios');
 const logger = require('debug')('logs');
-const END_OF_PURGE = '0';
 
 exports.showHelp = function(channel) {
     logger("showing help");
