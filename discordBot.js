@@ -5,7 +5,6 @@ const PostgresHelper = require('./postgresHelper.js');
 const SweeperCommands = require('./commands.js');
 const botHelper = require('./botHelper.js');
 
-
 const client = new Discord.Client();
 const psqlHelper = new PostgresHelper(client);
 
@@ -99,7 +98,6 @@ client.on('channelCreate', channel => {
     logger("Error on channelCreate event:");
     logger(error);
   }
-  
 });
 
 client.on('channelDelete', channel => {
