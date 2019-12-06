@@ -77,6 +77,11 @@ exports.purgeImages = async function (psqlHelper, targetUser, targetChannel) {
             await botHelper.sleep(1000);
         }
     }
-    await psqlHelper.removeUserCheckpoint(targetUser, targetChannel);
+    try {
+        await psqlHelper.removeUserCheckpoint(targetUser.id, targetChannel.id);
+    } catch (err) {
+        logger('failed to remove checkpoint');
+        logger(error);
+    }
     targetUser.send(`Hi ${targetUser.username}. I've deleted ${imageCount} images from ${targetChannel.name}. Please check if any recent images you've uploaded are not deleted.`);
 }

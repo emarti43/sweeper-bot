@@ -46,7 +46,6 @@ class PostgresHelper {
   }
 
   // RESPONSE FORMAT
-  // Example Response:
   // [
   //   {
   //     month: "November",
@@ -146,8 +145,13 @@ class PostgresHelper {
     }
   }
 
-  async removeUserCheckpoint(targetUser, targetChannel) {
-    await this.pool.query('DELETE FROM checkpoints WHERE checkpoints.user_id = $1 and checkpoints.channel_id = $2;', [targetUser.id, targetChannel.id]);
+  async removeUserCheckpoint(userId, channelId) {
+    try {
+      await this.pool.query('DELETE FROM checkpoints WHERE user_id = $1 and channel_id = $2;', [userId, channelId]);
+    } catch (err) {
+      console.log(err);
+    }
+    
   }
 
   async storeImage(messageId, channelId, serverId, userId) {
