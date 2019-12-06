@@ -9,7 +9,7 @@ exports.MessageResponse = async function MessageResponse(channel, content) {
     await channel.stopTyping();
 }
 
-exports.sleep = () => new Promise(resolve => setTimeout(resolve, ms));
+exports.sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function configureParams(psqlHelper, serverId, channelId) {
     let params = { limit: 100 };
