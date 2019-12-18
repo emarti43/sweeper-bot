@@ -1,5 +1,5 @@
 # discordBotJS
-simple discord bot that is used to delete images. Done in JavaScript
+simple discord bot that is used to delete images. More info can be found on [the bot's website](http://sweeper-bot-client.herokuapp.com/)
 
 ## Usage
 With the token provided and required node packages installed, just run:
