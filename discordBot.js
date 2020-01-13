@@ -112,7 +112,6 @@ client.on('channelDelete', channel => {
 
 client.on('message', message => {
   let args = message.content.split(/\s+/);
-  logger('parsing command arguments', args)
   switch(args[0]) {
     case '!purge_images':
       let channelTarget = parseChannel(args[1]);
@@ -123,6 +122,7 @@ client.on('message', message => {
         } else botHelper.MessageResponse(message.channel, "I'm on it 😅");
       } else {
         //Syntax for purging for a user !purge_images <user> <channel>
+        logger('parsing command arguments', args)
         channelTarget = parseChannel(args[2]);
         let user = message.guild.members.get(args[1].slice(3, args[1].length - 1));
         if (message.guild.members.get(message.author.id).permissions.has('ADMINISTRATOR')) {
