@@ -140,7 +140,7 @@ client.on('message', message => {
     case '!add_channel':
       if (parseChannel(args[1]) && message.member.hasPermission('ADMINISTRATOR')) {
         attemptCommand(addChannel, [parseChannel(args[1])]);
-        attemptCommand(botHelper.scrapeImages, [message.channel]);
+        attemptCommand(botHelper.scrapeImages, [psqlHelper, message.channel]);
       }
       break;
     case '!show_monitored_channels':
