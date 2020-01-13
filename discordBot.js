@@ -114,20 +114,21 @@ client.on('message', message => {
   let args = message.content.split(' ');
   switch(args[0]) {
     case '!purge_images':
-      if (parseChannel(args[1])) {
-        if (attemptCommand(queuePurge, [message.author.id, parseChannel(args[1]).id])) {
+      let channelTarget = parseChannel(args[1])
+      if (channelTarget) {
+        if (attemptCommand(queuePurge, [message.author.id, channelTarget.id])) {
           botHelper.MessageResponse(message.channel, '⏱ Starting Purge. You will be messaged when the purge is done (hopefully) ⏱');
-          attemptCommand(SweeperCommands.purgeImages, [psqlHelper, message.author, parseChannel(args[1])]);
+          attemptCommand(SweeperCommands.purgeImages, [psqlHelper, message.author, channelTarget]);
         } else botHelper.MessageResponse(message.channel, "I'm on it 😅");
       } else {
+        //Syntax for purging for a user !purge_images <user> <channel>
+        channelTarget = parseChannel(args[2]);
         let user = message.guild.members.get(args[1].slice(3, args[1].length - 1));
-        if (message.author.permissions.has('ADMINISTRATOR')) {
-          if (parseChannel(args[1])) {
-            if (attemptCommand(queuePurge, [message.author.id, parseChannel(args[2]).id])) {
-              botHelper.MessageResponse(message.channel, '⏱ Starting Purge. You will be messaged when the purge is done (hopefully) ⏱');
-              attemptCommand(SweeperCommands.purgeImages, [psqlHelper, user, parseChannel(args[2])]);
+        if (message.guild.members.get(author.id).permissions.has('ADMINISTRATOR')) {
+            if (channelTarget && attemptCommand(queuePurge, [message.author.id, channelTarget.id])) {
+              botHelper.MessageResponse(message.channel, '⏱ Starting Purge. the user will be messaged when the purge is done (hopefully) ⏱');
+              attemptCommand(SweeperCommands.purgeImages, [psqlHelper, user, channelTarget]);
             }
-          }
         }
       }
       break;
