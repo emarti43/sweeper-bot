@@ -111,7 +111,7 @@ client.on('channelDelete', channel => {
 
 
 client.on('message', message => {
-  let args = message.content.split(' ');
+  let args = message.content.split(/\s+/);
   logger('parsing command arguments', args)
   switch(args[0]) {
     case '!purge_images':
