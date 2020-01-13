@@ -112,9 +112,10 @@ client.on('channelDelete', channel => {
 
 client.on('message', message => {
   let args = message.content.split(' ');
+  logger('parsing command arguments', args)
   switch(args[0]) {
     case '!purge_images':
-      let channelTarget = parseChannel(args[1])
+      let channelTarget = parseChannel(args[1]);
       if (channelTarget) {
         if (attemptCommand(queuePurge, [message.author.id, channelTarget.id])) {
           botHelper.MessageResponse(message.channel, '⏱ Starting Purge. You will be messaged when the purge is done (hopefully) ⏱');
