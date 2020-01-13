@@ -14,7 +14,7 @@ exports.showHelp = function(channel) {
     botHelper.MessageResponse(channel, content);
 }
 
-exports.showChannelActivity = async function(psqlHelper, channel) {
+exports.serverStats = async function(psqlHelper, channel) {
     logger("Posting logging activity on client server")
     let response = await psqlHelper.getChannelActivity(channel.guild.id);
     response.forEach(element => {

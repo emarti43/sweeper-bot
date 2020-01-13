@@ -119,6 +119,16 @@ client.on('message', message => {
           botHelper.MessageResponse(message.channel, '⏱ Starting Purge. You will be messaged when the purge is done (hopefully) ⏱');
           attemptCommand(SweeperCommands.purgeImages, [psqlHelper, message.author, parseChannel(args[1])]);
         } else botHelper.MessageResponse(message.channel, "I'm on it 😅");
+      } else {
+        let user = message.guild.members.get(args[1].slice(3, args[1].length - 1));
+        if (message.author.permissions.has('ADMINISTRATOR')) {
+          if (parseChannel(args[1])) {
+            if (attemptCommand(queuePurge, [message.author.id, parseChannel(args[2]).id])) {
+              botHelper.MessageResponse(message.channel, '⏱ Starting Purge. You will be messaged when the purge is done (hopefully) ⏱');
+              attemptCommand(SweeperCommands.purgeImages, [psqlHelper, user, parseChannel(args[2])]);
+            }
+          }
+        }
       }
       break;
     case '!set_sweeper':
@@ -136,8 +146,8 @@ client.on('message', message => {
     case '!show_monitored_channels':
       attemptCommand(SweeperCommands.showMonitoredChannels, [psqlHelper, message.channel]);
       break;
-    case '!show_channel_activity':
-      attemptCommand(SweeperCommands.showChannelActivity, [psqlHelper, message.channel]);
+    case '!server_stats':
+      attemptCommand(SweeperCommands.serverStats, [psqlHelper, message.channel]);
       break;
     case '!help':
       attemptCommand(SweeperCommands.showHelp, [message.channel]);
