@@ -49,6 +49,7 @@ exports.showMonitoredChannels = async function (psqlHelper, channel) {
     }
 }
 
+// NOTE: targetUser must be of type User, not GuildMember or anything else
 exports.purgeImages = async function (psqlHelper, targetUser, targetChannel) {
     logger('Purge initiated for %o', targetUser.username);
     try {

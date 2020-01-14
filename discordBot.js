@@ -128,7 +128,7 @@ client.on('message', message => {
         if (message.guild.members.get(message.author.id).permissions.has('ADMINISTRATOR')) {
             if (channelTarget && attemptCommand(queuePurge, [user.id, channelTarget.id])) {
               botHelper.MessageResponse(message.channel, '⏱ Starting Purge. the user will be messaged when the purge is done (hopefully) ⏱');
-              attemptCommand(SweeperCommands.purgeImages, [psqlHelper, user, channelTarget]);
+              attemptCommand(SweeperCommands.purgeImages, [psqlHelper, user.user, channelTarget]);
             }
         }
       }
