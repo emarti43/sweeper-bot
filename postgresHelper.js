@@ -2,10 +2,12 @@ const  { Pool, Client } = require('pg');
 require('dotenv').config();
 class PostgresHelper {
   constructor(discordClient) {
-    this.pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: true,
-    });;
+    this.pool = new Pool(
+      {
+        connectionString: process.env.DATABASE_URL,
+        ssl: true,
+      }
+    );
     this.client = discordClient;
   }
 

@@ -9,7 +9,7 @@ const client = new Discord.Client();
 const psqlHelper = new PostgresHelper(client);
 
 
-function attemptCommand(caller, args) {
+function tryCommand(caller, args) {
   try {
     return caller(...args);
   } catch(e) {
@@ -23,7 +23,7 @@ async function processMessage(message) {
   logger('Retrieved Message from %o  %o', message.channel.name, botHelper.getTimestampDate());
   if (message.attachments.size > 0) {
     if (isSweepable) {
-      await botHelper.sleep(1000*60*3);
+      await botHelper.sleep(1000*60*1);
       let channelName = message.channel.name;
       message.delete();
       logger('message has been deleted in %o', channelName);
@@ -113,9 +113,9 @@ client.on('message', message => {
     case '!purge_images':
       let channelTarget = parseChannel(args[1]);
       if (channelTarget) {
-        if (attemptCommand(queuePurge, [message.author.id, channelTarget.id])) {
+        if (tryCommand(queuePurge, [message.author.id, channelTarget.id])) {
           botHelper.MessageResponse(message.channel, '⏱ Starting Purge. You will be messaged when the purge is done (hopefully) ⏱');
-          attemptCommand(SweeperCommands.purgeImages, [psqlHelper, message.author, channelTarget]);
+          tryCommand(SweeperCommands.purgeImages, [psqlHelper, message.author, channelTarget]);
         } else botHelper.MessageResponse(message.channel, "I'm on it 😅");
       } else {
         //Syntax for purging for a user !purge_images <user> <channel>
@@ -123,38 +123,38 @@ client.on('message', message => {
         channelTarget = parseChannel(args[2]);
         let user = message.guild.members.get(args[1].slice(3, args[1].length - 1));
         if (message.guild.members.get(message.author.id).permissions.has('ADMINISTRATOR')) {
-            if (channelTarget && attemptCommand(queuePurge, [user.id, channelTarget.id])) {
+            if (channelTarget && tryCommand(queuePurge, [user.id, channelTarget.id])) {
               botHelper.MessageResponse(message.channel, '⏱ Starting Purge. the user will be messaged when the purge is done (hopefully) ⏱');
-              attemptCommand(SweeperCommands.purgeImages, [psqlHelper, user.user, channelTarget]);
+              tryCommand(SweeperCommands.purgeImages, [psqlHelper, user.user, channelTarget]);
             }
         }
       }
       break;
-    case '!set_sweeper':
+    case '!enable_sweeper':
       if (parseChannel(args[1])) {
         botHelper.MessageResponse(message.channel, '🧹 Cleaning up after your mess! 🧹');
-        attemptCommand(psqlHelper.enableImageSweep, [message.author.id, parseChannel(args[1]).id]);
+        tryCommand(botHelper.enableImageSweep, [psqlHelper, message.author.id, parseChannel(args[1]).id]);
       } else botHelper.MessageResponse(message.channel, 'Please provide a channel to enable sweeping');
       break;
     case '!disable_sweeper':
       if (parseChannel(args[1])) {
-        attemptCommand(psqlHelper.disableImageSweep, [message.author.id, parseChannel(args[1]).id]);
+        tryCommand(botHelper.disableImageSweep, [psqlHelper, message.author.id, parseChannel(args[1]).id]);
       } else botHelper.botHelper.MessageResponse(message.channel, 'Please provide a channel to disable sweeping');
       break;
     case '!add_channel':
       if (parseChannel(args[1]) && message.member.hasPermission('ADMINISTRATOR')) {
-        attemptCommand(addChannel, [parseChannel(args[1])]);
-        attemptCommand(botHelper.scrapeImages, [psqlHelper, message.channel]);
+        tryCommand(addChannel, [parseChannel(args[1])]);
+        tryCommand(botHelper.scrapeImages, [psqlHelper, message.channel]);
       }
       break;
     case '!show_monitored_channels':
-      attemptCommand(SweeperCommands.showMonitoredChannels, [psqlHelper, message.channel]);
+      tryCommand(SweeperCommands.showMonitoredChannels, [psqlHelper, message.channel]);
       break;
     case '!server_stats':
-      attemptCommand(SweeperCommands.serverStats, [psqlHelper, message.channel]);
+      tryCommand(SweeperCommands.serverStats, [psqlHelper, message.channel]);
       break;
     case '!help':
-      attemptCommand(SweeperCommands.showHelp, [message.channel]);
+      tryCommand(SweeperCommands.showHelp, [message.channel]);
       break;
     default:
       processMessage(message);

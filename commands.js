@@ -49,6 +49,14 @@ exports.showMonitoredChannels = async function (psqlHelper, channel) {
     }
 }
 
+exports.enableImageSweep =  async function (psqlHelper, userId, channelId) {
+    psqlHelper.enableImageSweep(userId, channelId);
+}
+
+exports.disableImageSweep =  async function (psqlHelper, userId, channelId) {
+    psqlHelper.disableImageSweep(userId, channelId);
+}
+
 // NOTE: targetUser must be of type User, not GuildMember or anything else
 exports.purgeImages = async function (psqlHelper, targetUser, targetChannel) {
     logger('Purge initiated for %o', targetUser.username);
