@@ -179,9 +179,17 @@ class PostgresHelper {
     }
   }
 
-  async setImageSweep(userId, channelId) {
+  async enableImageSweep(userId, channelId) {
     try {
-      await this.pool.query('INSERT INTO imagesweeper(user_id, channel_id) VALUES($1, $2);');
+      await this.pool.query('INSERT INTO imagesweeper(user_id, channel_id) VALUES($1, $2);', [userId, channelId]);
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  async disableImageSweep(userId, channelId) {
+    try {
+      await this.pool.query('DELETE FROM imagesweeper WHERE user_id = $1 AND channel_id = $2;', [userId, channelId]);
     } catch (err) {
       console.log(err);
     }

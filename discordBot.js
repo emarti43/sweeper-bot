@@ -75,9 +75,6 @@ async function queuePurge(userId, channelId) {
   return true;
 }
 
-async function setSweeper(userId, channel) {
-  psqlHelper.setImageSweep(userId, channel.id);
-}
 async function addChannel(channel) {
   psqlHelper.addMonitoredChannel(channel.guild.id, channel.id);
 }
@@ -136,8 +133,13 @@ client.on('message', message => {
     case '!set_sweeper':
       if (parseChannel(args[1])) {
         botHelper.MessageResponse(message.channel, '🧹 Cleaning up after your mess! 🧹');
-        attemptCommand(setSweeper, [message.author.id, parseChannel(args[1]).id]);
-      }
+        attemptCommand(psqlHelper.enableImageSweep, [message.author.id, parseChannel(args[1]).id]);
+      } else botHelper.MessageResponse(message.channel, 'Please provide a channel to enable sweeping');
+      break;
+    case '!disable_sweeper':
+      if (parseChannel(args[1])) {
+        attemptCommand(psqlHelper.disableImageSweep, [message.author.id, parseChannel(args[1]).id]);
+      } else botHelper.botHelper.MessageResponse(message.channel, 'Please provide a channel to disable sweeping');
       break;
     case '!add_channel':
       if (parseChannel(args[1]) && message.member.hasPermission('ADMINISTRATOR')) {
