@@ -3,6 +3,7 @@ const Discord = require('discord.js');
 const logger = require('debug')('logs');
 const PostgresHelper = require('./postgresHelper.js');
 const SweeperCommands = require('./commands.js');
+const Purging = require('./purgeImages.js');
 const botHelper = require('./botHelper.js');
 
 const client = new Discord.Client();
@@ -14,6 +15,15 @@ function tryCommand(caller, args) {
     return caller(...args);
   } catch(e) {
     logger('COMMAND HAS FAILED %o : %o', caller.name, e.message);
+  }
+}
+
+function parseChannel(text) {
+  try {
+    return client.channels.get(text.split('#')[1].split('>')[0]);
+  } catch(e) {
+    logger(e.message);
+    return undefined;
   }
 }
 
@@ -37,24 +47,19 @@ async function processMessage(message) {
   }
 }
 
-function parseChannel(text) {
-  try {
-    return client.channels.get(text.split('#')[1].split('>')[0]);
-  } catch(e) {
-    logger(e.message);
-    return undefined;
-  }
-}
-
 async function continuePurges() {
   try {
-    logger('Restarting Purges');
-    var res = await psqlHelper.getAllCheckpoints();
-    for(let i = 0; i < res.rows.length; i++) {
-      let targetUser = await client.fetchUser(res.rows[i].user_id);
-      let targetChannel = await client.channels.get(res.rows[i].channel_id);
-      SweeperCommands.purgeImages(psqlHelper, targetUser, targetChannel);
-      await botHelper.sleep(10000);
+    if (process.env.NO_PURGES) {
+      logger('Purges are turned off');
+    } else {
+      logger('Restarting Purges');
+      var res = await psqlHelper.getAllCheckpoints();
+      for(let i = 0; i < res.rows.length; i++) {
+        let targetUser = await client.fetchUser(res.rows[i].user_id);
+        let targetChannel = await client.channels.get(res.rows[i].channel_id);
+        Purging.startPurge(targetUser, targetChannel, psqlHelper);
+        await botHelper.sleep(10000);
+      }
     }
   } catch(err) {
     logger(err);
@@ -66,13 +71,6 @@ async function scrapeChannels() {
   for(let i = 0; i < channels.length; i++) {
     await botHelper.scrapeImages(psqlHelper, channels[i]);
   }
-}
-
-async function queuePurge(userId, channelId) {
-  let response = await psqlHelper.getUserCheckpoint(userId, channelId)
-  if (response.rows && response.rows.length > 0) return false;
-  psqlHelper.insertUserCheckpoint(userId, channelId);
-  return true;
 }
 
 async function addChannel(channel) {
@@ -111,29 +109,12 @@ client.on('message', message => {
   let args = message.content.split(/\s+/);
   switch(args[0]) {
     case '!purge_images':
-      let channelTarget = parseChannel(args[1]);
-      if (channelTarget) {
-        if (tryCommand(queuePurge, [message.author.id, channelTarget.id])) {
-          botHelper.MessageResponse(message.channel, '⏱ Starting Purge. You will be messaged when the purge is done (hopefully) ⏱');
-          tryCommand(SweeperCommands.purgeImages, [psqlHelper, message.author, channelTarget]);
-        } else botHelper.MessageResponse(message.channel, "I'm on it 😅");
-      } else {
-        //Syntax for purging for a user !purge_images <user> <channel>
-        logger('parsing command arguments', args)
-        channelTarget = parseChannel(args[2]);
-        let user = message.guild.members.get(args[1].slice(3, args[1].length - 1));
-        if (message.guild.members.get(message.author.id).permissions.has('ADMINISTRATOR')) {
-            if (channelTarget && tryCommand(queuePurge, [user.id, channelTarget.id])) {
-              botHelper.MessageResponse(message.channel, '⏱ Starting Purge. the user will be messaged when the purge is done (hopefully) ⏱');
-              tryCommand(SweeperCommands.purgeImages, [psqlHelper, user.user, channelTarget]);
-            }
-        }
-      }
+      Purging.purge(message, psqlHelper);
       break;
     case '!enable_sweeper':
       if (parseChannel(args[1])) {
         botHelper.MessageResponse(message.channel, '🧹 Cleaning up after your mess! 🧹');
-        tryCommand(botHelper.enableImageSweep, [psqlHelper, message.author.id, parseChannel(args[1]).id]);
+        tryCommand(botHelper.enableImageSweep,  a [psqlHelper, message.author.id, parseChannel(args[1]).id]);
       } else botHelper.MessageResponse(message.channel, 'Please provide a channel to enable sweeping');
       break;
     case '!disable_sweeper':
