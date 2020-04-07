@@ -21,7 +21,7 @@ async function newQueue(psqlHelper, userId, channelId) {
   return true;
 }
 
-exports.startPurge = async function(targetUser, targetChannel, psqlHelper, client) {
+exports.startPurge = async function(targetUser, targetChannel, psqlHelper) {
   logger('Purge initiated for %o', targetUser.username);
   try {
       var serverId = await targetChannel.guild.id;
@@ -58,7 +58,7 @@ exports.startPurge = async function(targetUser, targetChannel, psqlHelper, clien
   targetUser.send(`Hi ${targetUser.username}. I've deleted ${imageCount} images from ${targetChannel.name}. Please check if any recent images you've uploaded are not deleted.`);
 }
 
-exports.purge = async function(message, psqlHelper) {
+exports.purge = async function(message, psqlHelper, client) {
   if (process.env.NO_PURGES) {
     logger('Purge queued up for later (NO_PURGES)');
     botHelper.MessageResponse(message.channel, 'Purges are currently disabled, your purge will start when purges are enabled again'); 
