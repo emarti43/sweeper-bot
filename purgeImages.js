@@ -65,7 +65,7 @@ exports.purge = async function(message, psqlHelper) {
   }
   logger('checking args for purge...');
   let args = message.content.split(/\s+/);
-  let targetChannel = parseChannel(args[1]);
+  let targetChannel = parseChannel(args[1], client);
   if (targetChannel) {
     if (newQueue(psqlHelper, message.author.id, targetChannel.id)) {
       botHelper.MessageResponse(message.channel, '⏱ Starting Purge. You will be messaged when the purge is done (hopefully) ⏱');
@@ -76,7 +76,7 @@ exports.purge = async function(message, psqlHelper) {
       }
     } else botHelper.MessageResponse(message.channel, "I'm on it 😅(Your Purge is queued)");
   } else {
-    targetChannel = parseChannel(args[2]);
+    targetChannel = parseChannel(args[2], client);
     let user = message.guild.members.get(args[1].slice(3, args[1].length - 1));
     if (message.guild.members.get(message.author.id).permissions.has('ADMINISTRATOR')) {
         if (targetChannel && newQueue(psqlHelper, user.id, targetChannel.id)) {
