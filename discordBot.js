@@ -21,7 +21,7 @@ async function processMessage(message) {
   psqlHelper.logActivity(message.channel.id, await message.channel.guild.id);
   let isSweepable = await psqlHelper.isSweepableChannel(message);
   logger('Retrieved Message from %o  %o', message.channel.name, botHelper.getTimestampDate());
-  if (message.attachments.size > 0) {
+  if (message.attachments.size > 0 || message.embeds.length > 0) {
     if (isSweepable) {
       await botHelper.sleep(1000*60*1);
       let channelName = message.channel.name;

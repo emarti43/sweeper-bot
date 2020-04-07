@@ -100,7 +100,7 @@ exports.scrapeImages = async function (psqlHelper, targetChannel) {
             logger('Reached End of history');
         }
         //store the messages in the database (only images)
-        messageChunk = await messageChunk.filter(message => message.attachments.size > 0);
+        messageChunk = await messageChunk.filter(message => message.attachments.size > 0 || message.embeds.length > 0);
         imageCount += messageChunk.size;
         let array = await messageChunk.array()
         for (let k = 0; k < array.length; k++) {
