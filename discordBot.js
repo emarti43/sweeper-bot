@@ -109,7 +109,7 @@ client.on('message', message => {
   let args = message.content.split(/\s+/);
   switch(args[0]) {
     case '!purge_images':
-      Purging.purge(message, psqlHelper);
+      Purging.purge(message, psqlHelper, client);
       break;
     case '!enable_sweeper':
       if (parseChannel(args[1])) {

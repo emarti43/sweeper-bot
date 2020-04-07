@@ -2,11 +2,11 @@ require('dotenv').config();
 const botHelper = require('./botHelper.js');
 const logger = require('debug')('logs');
 
-function parseChannel(text) {
+function parseChannel(text, client) {
   try {
     return client.channels.get(text.split('#')[1].split('>')[0]);
-  } catch(e) {
-    logger(e.message);
+  } catch(err) {
+    logger(err);
     return undefined;
   }
 }
@@ -21,7 +21,7 @@ async function newQueue(psqlHelper, userId, channelId) {
   return true;
 }
 
-exports.startPurge = async function(targetUser, targetChannel, psqlHelper) {
+exports.startPurge = async function(targetUser, targetChannel, psqlHelper, client) {
   logger('Purge initiated for %o', targetUser.username);
   try {
       var serverId = await targetChannel.guild.id;
@@ -61,7 +61,7 @@ exports.startPurge = async function(targetUser, targetChannel, psqlHelper) {
 exports.purge = async function(message, psqlHelper) {
   if (process.env.NO_PURGES) {
     logger('Purge queued up for later (NO_PURGES)');
-    botHelper.MessageResponse(message.channel, 'Purges are currently disabled, your purge will start when purges are enabled again');
+    botHelper.MessageResponse(message.channel, 'Purges are currently disabled, your purge will start when purges are enabled again'); 
   }
   logger('checking args for purge...');
   let args = message.content.split(/\s+/);
