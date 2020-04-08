@@ -1,22 +1,24 @@
 require('dotenv').config();
 const Discord = require('discord.js');
-const logger = require('debug')('logs');
+const logger = require('debug')('client');
 const PostgresHelper = require('./postgresHelper.js');
 const SweeperCommands = require('./commands.js');
 const PurgeImages = require('./commands/purgeImages.js');
 const showHelp = require('./commands/showHelp.js');
 const serverStats = require('./commands/serverStats.js');
+const showMonitoredChannels = require('./commands/showMonitoredChannels.js');
 const botHelper = require('./botHelper.js');
 
 const client = new Discord.Client();
 const psqlHelper = new PostgresHelper(client);
 
 
-function tryCommand(caller, args) {
+function tryCommand(dispatch, args) {
   try {
-    return caller(...args);
+    return dispatch(...args);
   } catch(e) {
-    logger('COMMAND HAS FAILED %o : %o', caller.name, e.message);
+    logger(`Could not execute ${dispatch.name}`)
+    logger(e);
   }
 }
 
@@ -136,7 +138,12 @@ client.on('message', message => {
       }
       break;
     case '!show_monitored_channels':
-      tryCommand(SweeperCommands.showMonitoredChannels, [psqlHelper, message.channel]);
+      try {
+        showMonitoredChannels(psqlHelper, message);
+      } catch (err) {
+        logger('Could not execute !show_monitored_channels');
+        logger(err);
+      }
       break;
     case '!server_stats':
       try {

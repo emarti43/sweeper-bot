@@ -1,6 +1,6 @@
 require('dotenv').config();
 const botHelper = require('../botHelper.js');
-const logger = require('debug')('logs');
+const logger = require('debug')('commands::purgeImages');
 
 function parseChannel(text, client) {
   try {

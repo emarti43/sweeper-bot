@@ -1,5 +1,5 @@
 const COMMAND_DESCRIPTIONS = require('../commandDescriptions.js');
-const logger = require('debug')('logs');
+const logger = require('debug')('commands::showHelp');
 
 exports.execute = function(message) {
   let content = '';

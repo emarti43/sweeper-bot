@@ -2,7 +2,7 @@ require('dotenv').config();
 const clientAddress = process.env.CLIENT_ADDRESS;
 const axios = require('axios');
 const botHelper = require('../botHelper.js');
-const logger = require('debug')('logs');
+const logger = require('debug')('commands::serverStats');
 
 exports.serverStats = async function(channel, psqlHelper) {
   logger("Posting logging activity on client server")
