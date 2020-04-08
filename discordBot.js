@@ -3,7 +3,8 @@ const Discord = require('discord.js');
 const logger = require('debug')('logs');
 const PostgresHelper = require('./postgresHelper.js');
 const SweeperCommands = require('./commands.js');
-const Purging = require('./purgeImages.js');
+const PurgeImages = require('./purgeImages.js');
+const showHelp = require('./showHelp.js');
 const botHelper = require('./botHelper.js');
 
 const client = new Discord.Client();
@@ -109,7 +110,12 @@ client.on('message', message => {
   let args = message.content.split(/\s+/);
   switch(args[0]) {
     case '!purge_images':
-      Purging.purge(message, psqlHelper, client);
+      try {
+        PurgeImages.execute(message, psqlHelper, client);
+      } catch (err) {
+        logger("Could not execute !purge_images");
+        logger(err);
+      }
       break;
     case '!enable_sweeper':
       if (parseChannel(args[1])) {
@@ -135,7 +141,12 @@ client.on('message', message => {
       tryCommand(SweeperCommands.serverStats, [psqlHelper, message.channel]);
       break;
     case '!help':
-      tryCommand(SweeperCommands.showHelp, [message.channel]);
+      try {
+        showHelp.execute(message);
+      } catch (err) {
+        logger('Could not execute !help');
+        logger(err);
+      }
       break;
     default:
       processMessage(message);
