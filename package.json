@@ -11,7 +11,9 @@
     "mysql": "^2.17.1",
     "pg": "^7.12.1"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "mocha": "^7.1.1"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node discordBot.js"

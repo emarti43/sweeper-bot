@@ -1,8 +1,6 @@
 require('dotenv').config();
 const COMMAND_DESCRIPTIONS = require('./commandDescriptions.js');
 const botHelper = require('./botHelper.js');
-const clientAddress = process.env.CLIENT_ADDRESS;
-const axios = require('axios');
 const logger = require('debug')('logs');
 
 exports.showHelp = function(channel) {
@@ -12,30 +10,6 @@ exports.showHelp = function(channel) {
         content += `\`${commandName}\` - ${COMMAND_DESCRIPTIONS[commandName]} \n`;
     });
     botHelper.MessageResponse(channel, content);
-}
-
-exports.serverStats = async function(psqlHelper, channel) {
-    logger("Posting logging activity on client server")
-    let response = await psqlHelper.getChannelActivity(channel.guild.id);
-    response.forEach(element => {
-        element.channels.forEach(channelLog => {
-            let existingChannel = channel.guild.channels.get(channelLog.id);
-            channelLog.name = existingChannel ? '#' + existingChannel.name : '#Deleted Channel';
-        });
-    });
-    axios({
-        method: 'post',
-        url: `http://${clientAddress}/servers/logs/${channel.guild.id}`,
-        data: {
-            name: channel.guild.name,
-            logs: response
-        }
-    }).then(response => {
-        logger("Channel Activity successfully posted");
-    }).catch(error => {
-        logger(error);
-    });
-    botHelper.MessageResponse(channel, 'http://' + clientAddress + '/servers/' + channel.guild.id);
 }
 
 exports.showMonitoredChannels = async function (psqlHelper, channel) {

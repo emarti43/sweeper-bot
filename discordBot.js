@@ -3,8 +3,9 @@ const Discord = require('discord.js');
 const logger = require('debug')('logs');
 const PostgresHelper = require('./postgresHelper.js');
 const SweeperCommands = require('./commands.js');
-const PurgeImages = require('./purgeImages.js');
-const showHelp = require('./showHelp.js');
+const PurgeImages = require('./commands/purgeImages.js');
+const showHelp = require('./commands/showHelp.js');
+const serverStats = require('./commands/serverStats.js');
 const botHelper = require('./botHelper.js');
 
 const client = new Discord.Client();
@@ -138,7 +139,12 @@ client.on('message', message => {
       tryCommand(SweeperCommands.showMonitoredChannels, [psqlHelper, message.channel]);
       break;
     case '!server_stats':
-      tryCommand(SweeperCommands.serverStats, [psqlHelper, message.channel]);
+      try {
+        serverStats.execute(message, psqlHelper);
+      } catch (err) {
+        logger('Could not execute !server_stats');
+        logger(err)
+      }
       break;
     case '!help':
       try {
