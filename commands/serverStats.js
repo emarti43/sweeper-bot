@@ -31,5 +31,5 @@ exports.serverStats = async function(channel, psqlHelper) {
 }
 
 exports.execute = async function(message, psqlHelper) {
-  exports.serverStats(psqlHelper, message.channel);
+  exports.serverStats(message.channel, psqlHelper);
 }
