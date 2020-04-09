@@ -47,7 +47,7 @@ exports.startPurge = async function(targetUser, targetChannel, psqlHelper) {
       logger('failed to remove checkpoint');
       logger(error);
   }
-  targetUser.send(`Hi ${targetUser.username}. I've deleted ${imageCount} images from ${targetChannel.name}. Please check if any recent images you've uploaded are not deleted.`);
+  targetUser.send(`Hi ${targetUser.username}. I've deleted ${imageCount} images and links from ${targetChannel.name}. Please check if any recent images you've uploaded are not deleted.`);
 }
 
 exports.execute = async function(message, psqlHelper, client) {
