@@ -53,7 +53,8 @@ exports.startPurge = async function(targetUser, targetChannel, psqlHelper) {
 exports.execute = async function(message, psqlHelper, client) {
   if (process.env.NO_PURGES) {
     logger('Purge queued up for later (NO_PURGES)');
-    botHelper.MessageResponse(message.channel, 'Purges are currently disabled, your purge will start when purges are enabled again'); 
+    botHelper.MessageResponse(message.channel, 'Purges are currently disabled ☠️, please try again some other time'); 
+    return;
   }
   logger('checking args for purge...');
   let args = message.content.split(/\s+/);
