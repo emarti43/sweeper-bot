@@ -1,4 +1,4 @@
-const logger = require('debug')('logs');
+const logger = require('debug')('helper');
 const CHARACTER_LIMIT = 2000;
 const END_OF_SCRAPE = '0';
 
@@ -67,6 +67,14 @@ exports.formatChannels = async function(channels) {
     result += 'Call \`!add_channel <Channel>\` to add another channel \n(requires admin permission)'
     return result;
 }
+exports.parseChannels = function parseChannel(text, client) {
+    try {
+        return client.channels.get(text.split('#')[1].split('>')[0]);
+    } catch(err) {
+        logger(err);
+        return undefined;
+    }
+}
 
 exports.scrapeImages = async function (psqlHelper, targetChannel) {
     let serverId = await targetChannel.guild.id;
@@ -77,7 +85,7 @@ exports.scrapeImages = async function (psqlHelper, targetChannel) {
         logger('Images have been scraped');
         return;
     }
-    logger('Beginning logging task for %o', targetChannel.name);
+    logger('beginning image scrape for %o', targetChannel.name);
 
     try {
         var messageChunk = await targetChannel.fetchMessages(params);

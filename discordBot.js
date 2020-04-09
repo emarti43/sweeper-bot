@@ -2,7 +2,8 @@ require('dotenv').config();
 const Discord = require('discord.js');
 const logger = require('debug')('client');
 const PostgresHelper = require('./postgresHelper.js');
-const SweeperCommands = require('./commands.js');
+const enableImageSweep = require('./commands/enableImageSweep.js');
+const disableImageSweep = require('./commands/disableImageSweep.js');
 const PurgeImages = require('./commands/purgeImages.js');
 const showHelp = require('./commands/showHelp.js');
 const serverStats = require('./commands/serverStats.js');
@@ -19,15 +20,6 @@ function tryCommand(dispatch, args) {
   } catch(e) {
     logger(`Could not execute ${dispatch.name}`)
     logger(e);
-  }
-}
-
-function parseChannel(text) {
-  try {
-    return client.channels.get(text.split('#')[1].split('>')[0]);
-  } catch(e) {
-    logger(e.message);
-    return undefined;
   }
 }
 
@@ -77,10 +69,6 @@ async function scrapeChannels() {
   }
 }
 
-async function addChannel(channel) {
-  psqlHelper.addMonitoredChannel(channel.guild.id, channel.id);
-}
-
 // BOT COMMANDS AND EVENTS
 
 client.on('ready', () => {
@@ -121,25 +109,32 @@ client.on('message', message => {
       }
       break;
     case '!enable_sweeper':
-      if (parseChannel(args[1])) {
-        botHelper.MessageResponse(message.channel, '🧹 Cleaning up after your mess! 🧹');
-        tryCommand(botHelper.enableImageSweep,  a [psqlHelper, message.author.id, parseChannel(args[1]).id]);
-      } else botHelper.MessageResponse(message.channel, 'Please provide a channel to enable sweeping');
+      try {
+        enableImageSweep.execute(message, psqlHelper, client);
+      } catch (err) {
+        logger("Could not execute !enable_sweeper");
+        logger(err);
+      }
       break;
     case '!disable_sweeper':
-      if (parseChannel(args[1])) {
-        tryCommand(botHelper.disableImageSweep, [psqlHelper, message.author.id, parseChannel(args[1]).id]);
-      } else botHelper.botHelper.MessageResponse(message.channel, 'Please provide a channel to disable sweeping');
+      try {
+        disableImageSweep.execute(message, psqlHelper, client);
+      } catch (err) {
+        logger("Could not execute !disable_sweeper");
+        logger(err);
+      }
       break;
     case '!add_channel':
-      if (parseChannel(args[1]) && message.member.hasPermission('ADMINISTRATOR')) {
-        tryCommand(addChannel, [parseChannel(args[1])]);
-        tryCommand(botHelper.scrapeImages, [psqlHelper, message.channel]);
+      try {
+        addChannel.execute(message, psqlHelper, client);
+      } catch (err) {
+        logger("Could not execute !add_channel");
+        logger(err);
       }
       break;
     case '!show_monitored_channels':
       try {
-        showMonitoredChannels(psqlHelper, message);
+        showMonitoredChannels.execute(psqlHelper, message);
       } catch (err) {
         logger('Could not execute !show_monitored_channels');
         logger(err);
