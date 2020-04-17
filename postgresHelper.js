@@ -47,24 +47,6 @@ class PostgresHelper {
     }
   }
 
-  // RESPONSE FORMAT
-  // [
-  //   {
-  //     month: "November",
-  //     year: "2019",
-  //     channelCounts: [
-  //       {
-  //         id: "237894572038290",
-  //         count: 45
-  //       },
-  //       {
-  //         id: "237894572038290",
-  //         count: 45
-  //       }
-  //     ]
-  //   }
-  // ]
-
   async getChannelActivity(serverId) {
     try {
       var queryResponse = await this.pool.query('SELECT * FROM channel_logs WHERE server_id = $1 ORDER BY last_cycle DESC, message_count DESC;', [serverId])
