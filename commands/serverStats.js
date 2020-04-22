@@ -14,6 +14,8 @@ exports.serverStats = async function(channel, psqlHelper) {
       });
   });
   try {
+    logger("sending stats to web server");
+    logger(response);
     response = await axios({
       method: 'post',
       url: `http://${clientAddress}/servers/logs/${channel.guild.id}`,

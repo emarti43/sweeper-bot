@@ -1,4 +1,5 @@
 const  { Pool, Client } = require('pg');
+const logger = require('debug')('psqlHelper');
 require('dotenv').config();
 class PostgresHelper {
   constructor(discordClient) {
@@ -72,6 +73,7 @@ class PostgresHelper {
         temp.channels.push({id: element.channel_id, count: element.message_count});
       });
       response.push(temp);
+      logger(response);
       return response;
     }
   }
