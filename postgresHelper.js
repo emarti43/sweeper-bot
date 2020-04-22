@@ -43,7 +43,7 @@ class PostgresHelper {
     try {
       let date = new Date();
       let month = date.getMonth().toString().padStart(2,'0');
-      this.pool.query('INSERT INTO channel_logs(channel_id, server_id, message_count, last_cycle) VALUES($1, $2, $3, $4) ON CONFLICT (server_id, channel_id, last_cycle) DO UPDATE SET message_count = channel_logs.message_count + 1;', [channelId, serverId, 1, '' + month + '/' + date.getFullYear()]);
+      this.pool.query('INSERT INTO channel_logs(channel_id, server_id, message_count, last_cycle) VALUES($1, $2, $3, $4) ON CONFLICT (server_id, channel_id, last_cycle) DO UPDATE SET message_count = channel_logs.message_count + 1;', [channelId, serverId, 1, '' + date.getFullYear() + '-' + month]);
     } catch (error) {
       console.log(error);
     }
@@ -61,7 +61,7 @@ class PostgresHelper {
       let response = [];
       let temp = null;
       queryResponse.rows.forEach( element => {
-        let [month, year] = element.last_cycle.split('/');
+        let [year, month] = element.last_cycle.split('-');
         month = monthNames[parseInt(month)];
         if (temp === null || month !== temp.month || year !== temp.year) {
           if (temp !== null) response.push(temp);
