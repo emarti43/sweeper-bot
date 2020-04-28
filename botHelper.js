@@ -6,7 +6,7 @@ const END_OF_SCRAPE = '0';
 exports.MessageResponse = async function MessageResponse(channel, content) {
     await channel.startTyping();
     await channel.send(content);
-    await channel.stopTyping();
+    await channel.stopTyping(true);
 }
 
 exports.sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
