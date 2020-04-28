@@ -1,15 +1,19 @@
 # Sweeper bot
-simple discord bot used to delete images. More info can be found on [the bot's website](http://sweeper-bot-client.herokuapp.com/)
+Simple discord bot used to delete images and links. More info can be found on [the bot's website](http://sweeper-bot-client.herokuapp.com/)
 
-## Usage
-With the token provided and required node packages installed, just run:
+## Setup
+### Prerequisities
+* `yarn`
+### Install
 ```
-node discordBot.js
+yarn install
 ```
-## Debugging
-Some useful debugging information is provided to track the deletion tasks when passing in a DEBUG flag:
+### Environmental Vars
+1. `DEBUG` - usually set to `*` to show all logs
+2. `DEBUG_COLORS` - enables colors on debug logs when set to `true`
+3. `DISCORD_BOT_AUTH` - for discord authentication
+4. `DATABASE_URL` - to connect with psql database
+## Run
 ```
-DEBUG=log node discordBot.js
+npm run start
 ```
-### notes
-this bot has a feature that deletes images posted from a particular channel. these channels are stored via some local psql database. Please have the server up and running in order for this feature to work
