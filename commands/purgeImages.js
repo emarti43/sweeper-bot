@@ -2,11 +2,7 @@ require('dotenv').config();
 const botHelper = require('../botHelper.js');
 const logger = require('debug')('commands::purgeImages');
 
-// adds a purge checkpoint for a user:
-// returns:
-//          false if already added
-//          true if new
-async function newQueue(psqlHelper, userId, channelId) {
+async function purgeNotActive(psqlHelper, userId, channelId) {
   let response = await psqlHelper.getUserCheckpoint(userId, channelId);
   if (response.rows && response.rows.length > 0) return false;
   psqlHelper.insertUserCheckpoint(userId, channelId);
@@ -60,7 +56,7 @@ exports.execute = async function(message, psqlHelper, client) {
   let args = message.content.split(/\s+/);
   let targetChannel = botHelper.parseChannel(args[1], client);
   if (targetChannel) {
-    if (newQueue(psqlHelper, message.author.id, targetChannel.id)) {
+    if (purgeNotActive(psqlHelper, message.author.id, targetChannel.id)) {
       botHelper.MessageResponse(message.channel, '⏱ Starting Purge. You will be messaged when the purge is done (hopefully) ⏱');
       try {
         if (!process.env.NO_PURGES) exports.startPurge(message.author, targetChannel, psqlHelper);
@@ -72,7 +68,7 @@ exports.execute = async function(message, psqlHelper, client) {
     targetChannel = botHelper.parseChannel(args[2], client);
     let user = message.guild.members.get(args[1].slice(3, args[1].length - 1));
     if (message.guild.members.get(message.author.id).permissions.has('ADMINISTRATOR')) {
-        if (targetChannel && newQueue(psqlHelper, user.id, targetChannel.id)) {
+        if (targetChannel && purgeNotActive(psqlHelper, user.id, targetChannel.id)) {
           botHelper.MessageResponse(message.channel, '⏱ Starting Purge. the user will be messaged when the purge is done (hopefully) ⏱');
           try {
             if (!process.env.NO_PURGES) exports.startPurge(user.user, targetChannel, psqlHelper);
