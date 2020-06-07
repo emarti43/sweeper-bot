@@ -48,10 +48,7 @@ exports.startPurge = async function(targetUser, targetChannel, psqlHelper) {
       logger(error);
   }
   targetUser.send(
-    `
-    Hi ${targetUser.username}. I've deleted ${imageCount} images and links from 
-    ${targetChannel.name}. Please check if any recent images you've uploaded are not deleted.
-    `
+    `Hi ${targetUser.username}. I've deleted ${imageCount} images and links from ${targetChannel.name}.`
   );
 }
 
@@ -94,11 +91,7 @@ exports.initialize = async function(message, psqlHelper, client) {
 
   if (!canBePurged) {
     invoker.send(
-      `Hi ${invoker.username}\n
-      Images on #${targetChannel.name} cannot be purged. Please contact your moderator to make
-      #${targetChannel.name} purgeable. Make them type this:
-      \`!add_channel #${targetChannel.name}\`
-      `
+      `Images on #${targetChannel.name} cannot be purged. Please contact your moderator to make #${targetChannel.name} purgeable. Make them type this: \`!add_channel #${targetChannel.name}\``
     );
     return;
   }
@@ -118,9 +111,7 @@ exports.initialize = async function(message, psqlHelper, client) {
   } catch (err) {
     logger('Could not complete Purge!\n', err);
     invoker.send(
-      `Hi ${invoker.username}. 
-      ${startedByAdmin ? `The purge for ${targetUser.username}` : `Your purge` } 
-      has failed to finish 💀. Please message binko and ask him what went wrong 👺.`
+      `Hi ${invoker.username}. ${startedByAdmin ? `The purge for ${targetUser.username}` : `Your purge` } has failed to finish 💀. Please message binko and ask him what went wrong 👺.`
     );
   }
 }
