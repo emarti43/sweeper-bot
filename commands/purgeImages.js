@@ -74,11 +74,12 @@ exports.initialize = async function(message, psqlHelper, client) {
     startedByAdmin = true;
   }
 
-  if(!targetChannel && !isAdmin) {
+  if(!targetChannel) {
     botHelper.MessageResponse(
       message.channel,
-      `Usage:\n\`!purge_images #channel-name\`\n\`!purge_images @username #channel-name\` (for admins)`
+      `Channel does not exist (Or I don't have permission to access it 😳).\nUsage:\n\`!purge_images #channel-name\`\n\`!purge_images @username #channel-name\` (for admins)`
     );
+    return;
   }
   let canBePurged = await psqlHelper.isMonitoredChannel(
     targetChannel.id, 
