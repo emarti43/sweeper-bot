@@ -77,11 +77,7 @@ exports.initialize = async function(message, psqlHelper, client) {
   if(!targetChannel && !isAdmin) {
     botHelper.MessageResponse(
       message.channel,
-      `
-      Usage:\n
-      \`!purge_images #channel-name\`\n
-      \`!purge_images @username #channel-name\` (for admins)\n
-      `
+      `Usage:\n\`!purge_images #channel-name\`\n\`!purge_images @username #channel-name\` (for admins)`
     );
   }
   let canBePurged = await psqlHelper.isMonitoredChannel(
@@ -90,8 +86,9 @@ exports.initialize = async function(message, psqlHelper, client) {
   );
 
   if (!canBePurged) {
-    invoker.send(
-      `Images on #${targetChannel.name} cannot be purged. Please contact your moderator to make #${targetChannel.name} purgeable. Make them type this: \`!add_channel #${targetChannel.name}\``
+    botHelper.MessageResponse(
+      message.channel,
+      `Images on #${targetChannel.name} cannot be purged. Please contact your moderator to make #${targetChannel.name} purgeable. Make them type this:\n\`!add_channel #${targetChannel.name}\``
     );
     return;
   }
