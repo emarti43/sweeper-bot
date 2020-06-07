@@ -2,11 +2,15 @@ require('dotenv').config();
 const botHelper = require('../botHelper.js');
 const logger = require('debug')('commands::purgeImages');
 
-async function purgeNotActive(psqlHelper, userId, channelId) {
+async function purgeIsAlreadyQueued(psqlHelper, userId, channelId) {
   let response = await psqlHelper.getUserCheckpoint(userId, channelId);
-  if (response.rows && response.rows.length > 0) return false;
+  if (response.rows && response.rows.length > 0) return true;
   psqlHelper.insertUserCheckpoint(userId, channelId);
   return true;
+}
+
+async function hasAdminPerms(message) {
+  return message.guild.members.get(message.author.id).permissions.has('ADMINISTRATOR');
 }
 
 exports.startPurge = async function(targetUser, targetChannel, psqlHelper) {
@@ -43,39 +47,80 @@ exports.startPurge = async function(targetUser, targetChannel, psqlHelper) {
       logger('failed to remove checkpoint');
       logger(error);
   }
-  targetUser.send(`Hi ${targetUser.username}. I've deleted ${imageCount} images and links from ${targetChannel.name}. Please check if any recent images you've uploaded are not deleted.`);
+  targetUser.send(
+    `
+    Hi ${targetUser.username}. I've deleted ${imageCount} images and links from 
+    ${targetChannel.name}. Please check if any recent images you've uploaded are not deleted.
+    `
+  );
 }
 
-exports.execute = async function(message, psqlHelper, client) {
+exports.initialize = async function(message, psqlHelper, client) {
   if (process.env.NO_PURGES) {
-    logger('Purge queued up for later (NO_PURGES)');
-    botHelper.MessageResponse(message.channel, 'Purges are currently disabled ☠️, please try again some other time'); 
+    logger('Purge denied (NO_PURGES is active)');
+    botHelper.MessageResponse(
+      message.channel,
+      'Purges are currently disabled ☠️, please try again some other time'
+    ); 
     return;
   }
-  logger('checking args for purge...');
+  let invoker = message.author;
+  let isAdmin = await hasAdminPerms(message);
   let args = message.content.split(/\s+/);
+  let targetUser = message.author;
   let targetChannel = botHelper.parseChannel(args[1], client);
-  if (targetChannel) {
-    if (purgeNotActive(psqlHelper, message.author.id, targetChannel.id)) {
-      botHelper.MessageResponse(message.channel, '⏱ Starting Purge. You will be messaged when the purge is done (hopefully) ⏱');
-      try {
-        if (!process.env.NO_PURGES) exports.startPurge(message.author, targetChannel, psqlHelper);
-      } catch (err) {
-        console.error("Could not complete Purge!\n", err);
-      }
-    } else botHelper.MessageResponse(message.channel, "I'm on it 😅(Your Purge is queued)");
-  } else {
+  let startedByAdmin = false;
+
+  if (!targetChannel && isAdmin) {
     targetChannel = botHelper.parseChannel(args[2], client);
-    let user = message.guild.members.get(args[1].slice(3, args[1].length - 1));
-    if (message.guild.members.get(message.author.id).permissions.has('ADMINISTRATOR')) {
-        if (targetChannel && purgeNotActive(psqlHelper, user.id, targetChannel.id)) {
-          botHelper.MessageResponse(message.channel, '⏱ Starting Purge. the user will be messaged when the purge is done (hopefully) ⏱');
-          try {
-            if (!process.env.NO_PURGES) exports.startPurge(user.user, targetChannel, psqlHelper);
-          } catch (err) {
-            console.error("Could not complete Purge!\n", err);
-          }
-        }
-    }
+    targetUser = message.guild.members.get(args[1].slice(3, args[1].length - 1));
+    startedByAdmin = true;
+  }
+
+  if(!targetChannel && !isAdmin) {
+    botHelper.MessageResponse(
+      message.channel,
+      `
+      Usage:\n
+      \`!purge_images #channel-name\`\n
+      \`!purge_images @username #channel-name\` (for admins)\n
+      `
+    );
+  }
+  let canBePurged = await psqlHelper.isMonitoredChannel(
+    targetChannel.id, 
+    targetChannel.guild.id
+  );
+
+  if (!canBePurged) {
+    invoker.send(
+      `Hi ${invoker.username}\n
+      Images on #${targetChannel.name} cannot be purged. Please contact your moderator to make
+      #${targetChannel.name} purgeable. Make them type this:
+      \`!add_channel #${targetChannel.name}\`
+      `
+    );
+    return;
+  }
+
+  if (await purgeIsAlreadyQueued(psqlHelper, message.author.id, targetChannel.id)) {
+    botHelper.MessageResponse(message.channel, "I'm on it 😅 (purge is queued)");
+    return;
+  }
+
+  botHelper.MessageResponse(
+    message.channel,
+    `⏱ Starting Purge. You will be messaged when the purge is done (hopefully) ⏱`
+  );
+
+  try {
+    exports.startPurge(targetUser, targetChannel, psqlHelper);
+  } catch (err) {
+    logger('Could not complete Purge!\n', err);
+    invoker.send(
+      `Hi ${invoker.username}. 
+      ${startedByAdmin ? `The purge for ${targetUser.username}` : `Your purge` } 
+      has failed to finish 💀. Please message binko and ask him what went wrong 👺.`
+    );
   }
 }

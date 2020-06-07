@@ -32,6 +32,6 @@ exports.serverStats = async function(channel, psqlHelper) {
   botHelper.MessageResponse(channel, 'http://' + clientAddress + '/servers/' + channel.guild.id);
 }
 
-exports.execute = async function(message, psqlHelper) {
+exports.initialize = async function(message, psqlHelper) {
   exports.serverStats(message.channel, psqlHelper);
 }

@@ -4,7 +4,7 @@ exports.disableImageSweep =  async function (psqlHelper, userId, channelId) {
   psqlHelper.disableImageSweep(userId, channelId);
 }
 
-exports.execute = async function (message, psqlHelper, client) {
+exports.initialize = async function (message, psqlHelper, client) {
   let args = message.content.split(/\s+/);
   let parsedChannel = await botHelper.parseChannel(args[1], client);
   if (parsedChannel) {

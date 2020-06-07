@@ -1,6 +1,12 @@
 require('dotenv').config();
 const Discord = require('discord.js');
 const logger = require('debug')('client');
+const botHelper = require('./botHelper.js');
+
+
+// ****************************************
+// COMMANDS
+// ****************************************
 const PostgresHelper = require('./postgresHelper.js');
 const enableImageSweep = require('./commands/enableImageSweep.js');
 const disableImageSweep = require('./commands/disableImageSweep.js');
@@ -8,7 +14,7 @@ const PurgeImages = require('./commands/purgeImages.js');
 const showHelp = require('./commands/showHelp.js');
 const serverStats = require('./commands/serverStats.js');
 const showMonitoredChannels = require('./commands/showMonitoredChannels.js');
-const botHelper = require('./botHelper.js');
+
 
 const client = new Discord.Client();
 const psqlHelper = new PostgresHelper(client);
@@ -106,25 +112,25 @@ client.on('message', message => {
   let args = message.content.split(/\s+/);
   switch(args[0]) {
     case '!purge_images':
-      tryCommand(PurgeImages.execute, [message, psqlHelper, client], '!purge_images');
+      tryCommand(PurgeImages.initialize, [message, psqlHelper, client], '!purge_images');
       break;
     case '!enable_sweeper':
-      tryCommand(enableImageSweep.execute, [message, psqlHelper, client], '!enable_sweeper');
+      tryCommand(enableImageSweep.initialize, [message, psqlHelper, client], '!enable_sweeper');
       break;
     case '!disable_sweeper':
-      tryCommand(disableImageSweep.execute, [message, psqlHelper, client], '!disable_sweeper');
+      tryCommand(disableImageSweep.initialize, [message, psqlHelper, client], '!disable_sweeper');
       break;
     case '!add_channel':
-      tryCommand(addChannel.execute, [message, psqlHelper, client], '!add_channel')
+      tryCommand(addChannel.initialize, [message, psqlHelper, client], '!add_channel')
       break;
     case '!show_monitored_channels':
-      tryCommand(showMonitoredChannels.execute, [psqlHelper, message], '!show_monitored_channels');
+      tryCommand(showMonitoredChannels.initialize, [psqlHelper, message], '!show_monitored_channels');
       break;
     case '!server_stats':
-      tryCommand(serverStats.execute, [message, psqlHelper], '!server_stats')
+      tryCommand(serverStats.initialize, [message, psqlHelper], '!server_stats')
       break;
     case '!help':
-      tryCommand(showHelp.execute, [message], '!help')
+      tryCommand(showHelp.initialize, [message], '!help')
       break;
     default:
       processMessage(message);

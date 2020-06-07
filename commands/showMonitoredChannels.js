@@ -1,7 +1,7 @@
 const logger = require('debug')('commands::showMonitoredChannels');
 const botHelper = require('./../botHelper.js');
 
-exports.execute = async function (psqlHelper, message) {
+exports.initialize = async function (psqlHelper, message) {
   let channel = message.channel;
   logger("showing Monitored Channels");
   let server = await channel.guild;
@@ -9,6 +9,6 @@ exports.execute = async function (psqlHelper, message) {
   if (channels.length > 0) {
     channel.send(await botHelper.formatChannels(channels));
   } else {
-    channel.send('No channels are being tracked. Please use !add_channel to begin tracking a channel\'s history');
+    channel.send('No channels are being tracked. Please use \`!add_channel\` to begin tracking a channel\'s history');
   }
 }

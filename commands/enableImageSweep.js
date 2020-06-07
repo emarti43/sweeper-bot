@@ -4,7 +4,7 @@ exports.enableImageSweep =  async function (psqlHelper, userId, channelId) {
   psqlHelper.enableImageSweep(userId, channelId);
 }
 
-exports.execute = async function (message, psqlHelper, client) {
+exports.initialize = async function (message, psqlHelper, client) {
   let args = message.content.split(/\s+/);
   const parsedChannel = await botHelper.parseChannel(args[1], client);
   if (parsedChannel) {
