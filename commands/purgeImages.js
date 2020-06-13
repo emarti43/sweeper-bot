@@ -5,8 +5,7 @@ const logger = require('debug')('commands::purgeImages');
 async function purgeIsAlreadyQueued(psqlHelper, userId, channelId) {
   let response = await psqlHelper.getUserCheckpoint(userId, channelId);
   if (response.rows && response.rows.length > 0) return true;
-  psqlHelper.insertUserCheckpoint(userId, channelId);
-  return true;
+  return false;
 }
 
 async function hasAdminPerms(message) {
@@ -94,10 +93,12 @@ exports.initialize = async function(message, psqlHelper, client) {
     return;
   }
 
-  if (await purgeIsAlreadyQueued(psqlHelper, message.author.id, targetChannel.id)) {
+  if (await purgeIsAlreadyQueued(psqlHelper, targetUser.id, targetChannel.id)) {
     botHelper.MessageResponse(message.channel, "I'm on it 😅 (purge is queued)");
     return;
   }
+
+  psqlHelper.insertUserCheckpoint(targetUser.id, targetChannel.id);
 
   botHelper.MessageResponse(
     message.channel,
