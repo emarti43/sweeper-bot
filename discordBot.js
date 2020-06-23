@@ -31,22 +31,20 @@ function tryCommand(dispatch, args, commandName) {
 
 async function processMessage(message) {
   try {
-    psqlHelper.logActivity(message.channel.id, await message.channel.guild.id);
+    psqlHelper.logActivity(await message.channel.id, await message.channel.guild.id);
     let isSweepable = await psqlHelper.isSweepableChannel(message);
     logger('Retrieved Message from %o', message.channel.name);
-    if (message.attachments.size > 0 || message.embeds.length > 0) {
-      if (isSweepable) {
-        await botHelper.sleep(1000 * 60 * 1);
-        let channelName = message.channel.name;
-        message.delete();
-        logger('message has been deleted in %o', channelName);
-      } else {
-        let serverId = await message.channel.guild.id;
-        if (await psqlHelper.isMonitoredChannel(message.channel.id, serverId)) {
-          logger('Storing message from %o', message.channel.name);
-          psqlHelper.storeImage(message.id, message.channel.id, serverId, message.author.id);
-        }
-      }
+    if (message.attachments.size <= 0 || message.embeds.length <= 0) return;
+    if (isSweepable) {
+      await botHelper.sleep(1000 * 60 * 1);
+      message.delete();
+      logger('message has been deleted in %o', message.channel.name);
+      return;
+    } 
+    let serverId = await message.channel.guild.id;
+    if (await psqlHelper.isMonitoredChannel(message.channel.id, serverId)) {
+      logger('Storing message from %o', message.channel.name);
+      psqlHelper.storeImage(message.id, message.channel.id, serverId, message.author.id);
     }
   } catch(err) {
     logger("Could not process message");
