@@ -80,6 +80,7 @@ exports.initialize = async function(message, psqlHelper, client) {
     );
     return;
   }
+  
   let canBePurged = await psqlHelper.isMonitoredChannel(
     targetChannel.id, 
     targetChannel.guild.id
@@ -94,7 +95,7 @@ exports.initialize = async function(message, psqlHelper, client) {
   }
 
   if (await purgeIsAlreadyQueued(psqlHelper, targetUser.id, targetChannel.id)) {
-    botHelper.MessageResponse(message.channel, "I'm on it 😅 (purge is queued)");
+    botHelper.MessageResponse(message.channel, "I'm on it 😅");
     return;
   }
 
