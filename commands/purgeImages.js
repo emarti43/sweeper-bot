@@ -76,10 +76,11 @@ exports.initialize = async function(message, psqlHelper, client) {
   if(!targetChannel) {
     botHelper.MessageResponse(
       message.channel,
-      `Channel does not exist (Or I don't have permission to access it 😳).\nUsage:\n\`!purge_images #channel-name\`\n\`!purge_images @username #channel-name\` (for admins)`
+      `Channel does not exist or I don't have permission to access it 😳.\nUsage:\n\`!purge_images #channel-name\`\n\`!purge_images @username #channel-name\` (for admins)`
     );
     return;
   }
+  
   let canBePurged = await psqlHelper.isMonitoredChannel(
     targetChannel.id,
     targetChannel.guild.id
@@ -94,7 +95,7 @@ exports.initialize = async function(message, psqlHelper, client) {
   }
 
   if (await purgeIsAlreadyQueued(psqlHelper, targetUser.id, targetChannel.id)) {
-    botHelper.MessageResponse(message.channel, "I'm on it 😅 (purge is queued)");
+    botHelper.MessageResponse(message.channel, "I'm on it 😅");
     return;
   }
 

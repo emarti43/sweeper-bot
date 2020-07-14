@@ -14,6 +14,7 @@ const PurgeImages = require('./commands/purgeImages.js');
 const showHelp = require('./commands/showHelp.js');
 const serverStats = require('./commands/serverStats.js');
 const showMonitoredChannels = require('./commands/showMonitoredChannels.js');
+const addChannel = require('./commands/addChannel.js');
 
 
 const client = new Discord.Client();
