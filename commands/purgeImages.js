@@ -57,7 +57,7 @@ exports.initialize = async function(message, psqlHelper, client) {
     botHelper.MessageResponse(
       message.channel,
       'Purges are currently disabled ☠️, please try again some other time'
-    ); 
+    );
     return;
   }
   let invoker = message.author;
@@ -81,7 +81,7 @@ exports.initialize = async function(message, psqlHelper, client) {
     return;
   }
   let canBePurged = await psqlHelper.isMonitoredChannel(
-    targetChannel.id, 
+    targetChannel.id,
     targetChannel.guild.id
   );
 
@@ -102,7 +102,7 @@ exports.initialize = async function(message, psqlHelper, client) {
 
   botHelper.MessageResponse(
     message.channel,
-    `⏱ Starting Purge. You will be messaged when the purge is done (hopefully) ⏱`
+    `⏱ Starting Purge for ${targetChannel.name}. You will be messaged when the purge is done (hopefully) ⏱`
   );
 
   try {
