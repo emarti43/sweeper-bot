@@ -13,7 +13,13 @@ async function hasAdminPerms(message) {
 }
 
 exports.startPurge = async function(targetUser, targetChannel, psqlHelper) {
-  logger('Purge initiated for %o', targetUser.username);
+  logger(
+    'Initializing Purge for user %o (%o) in channel %o (%o)', 
+    targetUser.username,
+    targetUser.id,
+    targetChannel.name,
+    targetChannel.id
+  );
   try {
       var serverId = await targetChannel.guild.id;
       var response = await psqlHelper.fetchImages(targetUser.id, targetChannel.id, serverId);
@@ -39,8 +45,15 @@ exports.startPurge = async function(targetUser, targetChannel, psqlHelper) {
           }
           await botHelper.sleep(1000);
       }
-  }
+  } else logger('Could not find images, ending purge');
   try {
+      logger(
+        'Removing Checkpoint for user %o (%o) in channel %o (%o)', 
+        targetUser.username,
+        targetUser.id,
+        targetChannel.name,
+        targetChannel.id
+      );
       await psqlHelper.removeUserCheckpoint(targetUser.id, targetChannel.id);
   } catch (err) {
       logger('failed to remove checkpoint');
