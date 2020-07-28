@@ -37,6 +37,7 @@ exports.startPurge = async function(targetUser, targetChannel, psqlHelper) {
               var message = await targetChannel.fetchMessage(response.rows[i].message_id);
           } catch (err) {
               logger('fetched nonexistent key');
+              logger(err);
               psqlHelper.deleteImage(response.rows[i].message_id, targetChannel.id, serverId);
               continue;
           }
