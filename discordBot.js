@@ -48,7 +48,7 @@ async function processMessage(message) {
       psqlHelper.storeImage(message.id, message.channel.id, serverId, message.author.id);
     }
   } catch(err) {
-    logger("Could not process message");
+    logger("Could not process message:");
     logger(err);
   }
 }
