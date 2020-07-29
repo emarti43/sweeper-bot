@@ -200,8 +200,6 @@ class PostgresHelper {
         channels.push(this.client.channels.get(response.rows[i].channel_id));
       }
     }
-    logger("ChannelObjects:");
-    logger(channels);
     return channels;
   }
 

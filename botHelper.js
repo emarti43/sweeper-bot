@@ -80,8 +80,8 @@ exports.scrapeImages = async function (psqlHelper, targetChannel) {
     let serverId = await targetChannel.guild.id;
     let params = await configureParams(psqlHelper, serverId, targetChannel.id);
     let imageCount = 0;
-    logger("Params for scraping:");
-    logger(params);
+    logger("Starting Scrape on Channel:");
+    logger(targetChannel);
 
     if (params.before === END_OF_SCRAPE) {
         logger('Images have been scraped');
