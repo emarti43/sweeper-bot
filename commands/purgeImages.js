@@ -131,10 +131,6 @@ exports.initialize = async function(message, psqlHelper, client) {
   );
 
   try {
-    targetChannel.lastMessage();
-  } catch()
-
-  try {
     exports.startPurge(targetUser, targetChannel, psqlHelper);
   } catch (err) {
     logger('Could not complete Purge!\n', err);
