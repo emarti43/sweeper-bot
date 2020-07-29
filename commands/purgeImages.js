@@ -72,7 +72,7 @@ exports.initialize = async function(message, psqlHelper, client) {
     logger('Purge denied (NO_PURGES is active)');
     botHelper.MessageResponse(
       message.channel,
-      'Purges are currently disabled ☠️, please try again some other time'
+      `Purges are currently disabled ☠️ (${process.env.NO_PURGES}), please try again some other time`
     );
     return;
   }
