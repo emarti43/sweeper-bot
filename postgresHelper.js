@@ -188,6 +188,8 @@ class PostgresHelper {
         var response = await this.pool.query('SELECT * FROM monitored_channels WHERE server_id = $1;', [serverId]);
       } else {
         var response = await this.pool.query('SELECT * FROM monitored_channels;');
+        logger("FetchChannels Response:");
+        logger(response);
       }
     } catch(err) {
       console.log(err);
