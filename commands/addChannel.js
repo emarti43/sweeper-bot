@@ -6,13 +6,13 @@ exports.addChannel = async function (channel, psqlHelper) {
 
 exports.initialize = async function (message, psqlHelper, client) {
   const args = message.content.split(/\s+/);
-  const parsedChannel = await botHelper.parseChannel(args[1], client);
-  if (parsedChannel && message.member.hasPermission('ADMINISTRATOR')) {
+  const targetChannel = await botHelper.parseChannel(args[1], client);
+  if (targetChannel && message.member.hasPermission('ADMINISTRATOR')) {
     try {
-      exports.addChannel(parsedChannel, psqlHelper);
-      botHelper.MessageResponse(message.channel, `Added channel #${parsedChannel.name}`);
+      exports.addChannel(targetChannel, psqlHelper);
+      botHelper.MessageResponse(message.channel, `Added channel #${targetChannel.name}`);
     } catch (err) {
-      logger("Could not add Channnel");
+      logger("Could not add Channel");
       logger(`Input ${message.content}`);
       logger(err);
     }
