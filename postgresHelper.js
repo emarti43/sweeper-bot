@@ -199,8 +199,9 @@ class PostgresHelper {
       for(let i = 0; i < response.rows.length; i++) {
         channels.push(this.client.channels.get(response.rows[i].channel_id));
       }
-      return channels;
     }
+    logger("ChannelObjects:");
+    logger(channels);
     return channels;
   }
 
