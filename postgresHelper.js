@@ -31,9 +31,9 @@ class PostgresHelper {
     }
   }
 
-  async removeChannel(channelId, serverId) {
+  async removeMonitoredChannel(channelId, serverId) {
     try {
-      this.pool.query('DELETE FROM channel_logs WHERE channel_id = $1 AND server_id = $2', [channelId, serverId]);
+      this.pool.query('DELETE FROM channel_logs WHERE channel_id = $1 AND server_id = $2;', [channelId, serverId]);
     } catch(error) {
       console.log(error)
     }

@@ -15,6 +15,7 @@ const showHelp = require('./commands/showHelp.js');
 const serverStats = require('./commands/serverStats.js');
 const showMonitoredChannels = require('./commands/showMonitoredChannels.js');
 const addChannel = require('./commands/addChannel.js');
+const removeChannel = require('./commands/removeChannel.js');
 
 
 const client = new Discord.Client();
@@ -120,7 +121,10 @@ client.on('message', message => {
       tryCommand(disableImageSweep.initialize, [message, psqlHelper, client], '!disable_sweeper');
       break;
     case '!add_channel':
-      tryCommand(addChannel.initialize, [message, psqlHelper, client], '!add_channel')
+      tryCommand(addChannel.initialize, [message, psqlHelper, client], '!add_channel');
+      break;
+    case '!remove_channel':
+      tryCommand(removeChannel.initialize, [message, psqlHelper, client], '!remove_channel');
       break;
     case '!show_monitored_channels':
       tryCommand(showMonitoredChannels.initialize, [psqlHelper, message], '!show_monitored_channels');
