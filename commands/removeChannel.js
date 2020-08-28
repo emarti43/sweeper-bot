@@ -12,6 +12,5 @@ exports.initialize = async function (psqlHelper, message) {
          logger(`Input ${message.content}`);
          logger(err);
       }
-      botHelper.scrapeImages(psqlHelper, message.channel);
    }
 }
