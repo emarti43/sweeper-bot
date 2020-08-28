@@ -6,7 +6,8 @@ exports.initialize = async function (message, psqlHelper, client) {
    const targetChannel = await botHelper.parseChannel(args[1], client);
    if (targetChannel && message.member.hasPermission('ADMINISTRATOR')) {
       try {
-         psqlHelper.removeMonitoredChannel(targetChannel.id, channel.guild.id);
+         psqlHelper.removeMonitoredChannel(targetChannel.id, targetChannel.guild.id);
+         botHelper.MessageResponse(message.channel, `Removed channel #${targetChannel.name}`);
       } catch (err) {
          logger("Could not remove Channel");
          logger(`Input ${message.content}`);
