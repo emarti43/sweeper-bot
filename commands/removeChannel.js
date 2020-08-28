@@ -1,7 +1,7 @@
 const logger = require('debug')('commands::removeChannel');
 const botHelper = require('./../botHelper.js');
 
-exports.initialize = async function (psqlHelper, message) {
+exports.initialize = async function (message, psqlHelper, client) {
    const args = message.content.split(/\s+/);
    const targetChannel = await botHelper.parseChannel(args[1], client);
    if (targetChannel && message.member.hasPermission('ADMINISTRATOR')) {
