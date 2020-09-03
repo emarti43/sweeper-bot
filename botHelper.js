@@ -77,11 +77,17 @@ exports.parseChannel = function (text, client) {
 }
 
 exports.scrapeImages = async function (psqlHelper, targetChannel) {
-    let serverId = await targetChannel.guild.id;
-    let params = await configureParams(psqlHelper, serverId, targetChannel.id);
-    let imageCount = 0;
-    logger("Starting Scrape on Channel:");
-    logger(targetChannel.name);
+    try {
+        let serverId = await targetChannel.guild.id;
+        let params = await configureParams(psqlHelper, serverId, targetChannel.id);
+        let imageCount = 0;
+    } catch (err) {
+        logger(`Failed to start purge. Cannot fetch server info.`);
+        logger(err)
+        return;
+    }
+
+    logger(`Starting Scrape on Channel ${targetChannel.name}`);
 
     if (params.before === END_OF_SCRAPE) {
         logger('Images have been scraped');
