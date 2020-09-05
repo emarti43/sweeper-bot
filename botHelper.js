@@ -67,9 +67,9 @@ exports.formatChannels = async function(channels) {
     result += 'Call \`!add_channel <Channel>\` to add another channel \n(requires admin permission)'
     return result;
 }
-exports.parseChannel = function (text, client) {
+exports.parseChannel = async function (text, client) {
     try {
-        return client.channels.get(text.split('#')[1].split('>')[0]);
+        return await client.channels.get(text.split('#')[1].split('>')[0]);
     } catch(err) {
         logger("Failed to parse channel:\n", err);
         return undefined;
