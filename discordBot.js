@@ -36,8 +36,8 @@ async function processMessage(message) {
     psqlHelper.logActivity(await message.channel.id, await message.channel.guild.id);
     let isSweepable = await psqlHelper.isSweepableChannel(message);
     logger('Retrieved Message from %o', message.channel.name);
-    logger(message.attachments.size, message.embeds.length);
-    if (message.attachments.size <= 0 || message.embeds.length <= 0) return;
+    let hasAttachment = message.attachments.size >= 1 || message.embeds.length >= 1;
+    if (!hasAttachment) return;
     if (isSweepable) {
       await botHelper.sleep(1000 * 60 * 1);
       message.delete();
