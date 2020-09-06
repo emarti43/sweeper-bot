@@ -79,9 +79,8 @@ exports.initialize = async function(message, psqlHelper, client) {
   let invoker = message.author;
   let isAdmin = await hasAdminPerms(message);
   let args = message.content.split(/\s+/);
-  logger(args, message.mentions.channels.first());
   let targetUser = message.author;
-  let targetChannel = botHelper.parseChannel(args[1], client);
+  let targetChannel = message.mentions.channels.first()
   let startedByAdmin = false;
 
   if (!targetChannel && isAdmin) {
