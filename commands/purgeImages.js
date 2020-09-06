@@ -81,7 +81,7 @@ exports.initialize = async function(message, psqlHelper, client) {
   let args = message.content.split(/\s+/);
   let targetUser = message.author;
   let targetChannel = await message.mentions.channels.first()
-  logger(targetChannel.constructor.name, targetChannel.viewable);
+  logger(targetChannel.constructor.name, Object.keys(targetChannel));
   let startedByAdmin = false;
 
   if (!targetChannel && isAdmin) {
