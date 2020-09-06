@@ -98,15 +98,6 @@ exports.initialize = async function(message, psqlHelper, client) {
     logger("Invalid targetChannel. Cannot purge undefined channel");
     return;
   }
-
-  if(!targetChannel.viewable) {
-    botHelper.MessageResponse(
-      message.channel,
-      `Sorry, I don't have permission to view this channel😳.\nUsage:\n\`!purge_images #channel-name\`\n\`!purge_images @username #channel-name\` (for admins)`
-    );
-    logger("Invalid targetChannel. Cannot view channel.");
-    return;
-  }
   
   let canBePurged = await psqlHelper.isMonitoredChannel(
     targetChannel.id,
