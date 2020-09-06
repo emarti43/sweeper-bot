@@ -95,6 +95,7 @@ exports.initialize = async function(message, psqlHelper, client) {
       message.channel,
       `Channel does not exist or I don't have permission to access it 😳.\nUsage:\n\`!purge_images #channel-name\`\n\`!purge_images @username #channel-name\` (for admins)`
     );
+    logger("Invalid targetChannel. Cannot purge undefined channel");
     return;
   }
 
@@ -103,6 +104,7 @@ exports.initialize = async function(message, psqlHelper, client) {
       message.channel,
       `Channel does not exist or I don't have permission to access it 😳.\nUsage:\n\`!purge_images #channel-name\`\n\`!purge_images @username #channel-name\` (for admins)`
     );
+    logger("Invalid targetChannel. Cannot view channel.");
     return;
   }
   
