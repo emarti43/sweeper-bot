@@ -23,6 +23,7 @@ exports.startPurge = async function(targetUser, targetChannel, psqlHelper) {
   try {
       var serverId = await targetChannel.guild.id;
       var response = await psqlHelper.fetchImages(targetUser.id, targetChannel.id, serverId);
+      logger(serverId, response);
   } catch (error) {
       logger(error);
   }
