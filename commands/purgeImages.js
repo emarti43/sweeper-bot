@@ -76,6 +76,7 @@ exports.initialize = async function(message, psqlHelper, client) {
     );
     return;
   }
+  logger(args);
   let invoker = message.author;
   let isAdmin = await hasAdminPerms(message);
   let args = message.content.split(/\s+/);
