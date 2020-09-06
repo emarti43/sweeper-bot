@@ -81,7 +81,7 @@ exports.initialize = async function(message, psqlHelper, client) {
   let args = message.content.split(/\s+/);
   let targetUser = message.author;
   let targetChannel = message.mentions.channels.first()
-  logger(targetChannel);
+  logger(targetChannel.constructor.name, targetChannel.viewable);
   let startedByAdmin = false;
 
   if (!targetChannel && isAdmin) {
@@ -102,7 +102,7 @@ exports.initialize = async function(message, psqlHelper, client) {
   if(!targetChannel.viewable) {
     botHelper.MessageResponse(
       message.channel,
-      `Channel does not exist or I don't have permission to access it 😳.\nUsage:\n\`!purge_images #channel-name\`\n\`!purge_images @username #channel-name\` (for admins)`
+      `Sorry, I don't have permission to view this channel😳.\nUsage:\n\`!purge_images #channel-name\`\n\`!purge_images @username #channel-name\` (for admins)`
     );
     logger("Invalid targetChannel. Cannot view channel.");
     return;
