@@ -1,12 +1,6 @@
 require('dotenv').config();
 const botHelper = require('../botHelper.js');
 const logger = require('debug')('commands::purgeImages');
-const Rollbar = require('rollbar');
-var rollbar = new Rollbar({
-  accessToken: process.env.ROLLBAR_AUTH,
-  captureUncaught: true,
-  captureUnhandledRejections: true
-});
 
 async function purgeIsAlreadyQueued(psqlHelper, userId, channelId) {
   let response = await psqlHelper.getUserCheckpoint(userId, channelId);
