@@ -111,8 +111,9 @@ class PostgresHelper {
     return response;
   }
   async getAllCheckpoints() {
+    const res = null;
     try {
-      var res = await this.pool.query('SELECT * FROM checkpoints;');
+      res = await this.pool.query('SELECT * FROM checkpoints;');
     } catch(error) {
       console.log(error);
     }
