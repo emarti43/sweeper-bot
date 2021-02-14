@@ -6,6 +6,8 @@ class PostgresHelper {
     this.pool = new Pool(
       {
         connectionString: process.env.DATABASE_URL,
+        connectionTimeoutMillis: 10000,
+        idleTimeoutMillis: 10000,
         ssl: true,
       }
     );
