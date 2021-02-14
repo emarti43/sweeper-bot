@@ -79,8 +79,8 @@ function continuePurges() {
     return;
   }
   for(let i = 0; i < res.rows.length; i++) {
-    let targetUser = await client.fetchUser(res.rows[i].user_id);
-    let targetChannel = await client.channels.get(res.rows[i].channel_id);
+    let targetUser = client.fetchUser(res.rows[i].user_id);
+    let targetChannel = client.channels.get(res.rows[i].channel_id);
     PurgeImages.startPurge(targetUser, targetChannel, psqlHelper);
     await botHelper.sleep(10000);
   }
