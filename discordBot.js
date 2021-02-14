@@ -74,6 +74,10 @@ async function continuePurges() {
     return;
   }
   logger('Fetched all purging checkpoints');
+  if (res === null) {
+    logger("Empty Response");
+    return;
+  }
   for(let i = 0; i < res.rows.length; i++) {
     let targetUser = await client.fetchUser(res.rows[i].user_id);
     let targetChannel = await client.channels.get(res.rows[i].channel_id);
