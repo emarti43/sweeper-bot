@@ -63,22 +63,22 @@ async function processMessage(message) {
 async function continuePurges() {
   if (process.env.NO_PURGES) {
     logger('Purges are turned off');
-  } else {
-    logger('Restarting Purges');
-    try {
-      var res = await psqlHelper.getAllCheckpoints();
-    } catch (err) {
-      logger('Failed to fetch endpoints');
-      rollbar.error(err);
-      return;
-    }
-    logger('Fetched all purging checkpoints');
-    for(let i = 0; i < res.rows.length; i++) {
-      let targetUser = await client.fetchUser(res.rows[i].user_id);
-      let targetChannel = await client.channels.get(res.rows[i].channel_id);
-      PurgeImages.startPurge(targetUser, targetChannel, psqlHelper);
-      await botHelper.sleep(10000);
-    }
+    return;
+  } 
+  logger('Restarting Purges');
+  try {
+    var res = await psqlHelper.getAllCheckpoints();
+  } catch (err) {
+    logger('Failed to fetch endpoints');
+    rollbar.error(err);
+    return;
+  }
+  logger('Fetched all purging checkpoints');
+  for(let i = 0; i < res.rows.length; i++) {
+    let targetUser = await client.fetchUser(res.rows[i].user_id);
+    let targetChannel = await client.channels.get(res.rows[i].channel_id);
+    PurgeImages.startPurge(targetUser, targetChannel, psqlHelper);
+    await botHelper.sleep(10000);
   }
 }
 
@@ -91,7 +91,7 @@ async function scrapeChannels() {
 
 // BOT COMMANDS AND EVENTS
 
-client.on('ready', () => {
+client.on('ready', async () => {
   rollbar.log("Bot is ready");
   logger('Starting bot up. Ready to receive connections...');
   scrapeChannels();
