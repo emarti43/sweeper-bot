@@ -80,6 +80,7 @@ class PostgresHelper {
       });
       response.push(temp);
       logger(response);
+      
       return response;
     }
   }
