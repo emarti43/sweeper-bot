@@ -25,7 +25,8 @@ const removeChannel = require('./commands/removeChannel.js');
 
 const client = new Discord.Client();
 const psqlHelper = new PostgresHelper(client);
-
+logger("Connected to db");
+logger(psqlHelper);
 
 function tryCommand(dispatch, args, commandName) {
   try {
