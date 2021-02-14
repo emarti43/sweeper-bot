@@ -61,23 +61,24 @@ async function processMessage(message) {
 }
 
 async function continuePurges() {
-  try {
-    if (process.env.NO_PURGES) {
-      logger('Purges are turned off');
-    } else {
-      logger('Restarting Purges');
+  if (process.env.NO_PURGES) {
+    logger('Purges are turned off');
+  } else {
+    logger('Restarting Purges');
+    try {
       var res = await psqlHelper.getAllCheckpoints();
-      logger('Fetched all purging checkpoints');
-      for(let i = 0; i < res.rows.length; i++) {
-        let targetUser = await client.fetchUser(res.rows[i].user_id);
-        let targetChannel = await client.channels.get(res.rows[i].channel_id);
-        PurgeImages.startPurge(targetUser, targetChannel, psqlHelper);
-        await botHelper.sleep(10000);
-      }
+    } catch (err) {
+      logger('Failed to fetch endpoints');
+      rollbar.error(err);
+      return;
     }
-  } catch(err) {
-    logger(err);
-    rollbar.error(err)
+    logger('Fetched all purging checkpoints');
+    for(let i = 0; i < res.rows.length; i++) {
+      let targetUser = await client.fetchUser(res.rows[i].user_id);
+      let targetChannel = await client.channels.get(res.rows[i].channel_id);
+      PurgeImages.startPurge(targetUser, targetChannel, psqlHelper);
+      await botHelper.sleep(10000);
+    }
   }
 }
 
