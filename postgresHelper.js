@@ -6,8 +6,6 @@ class PostgresHelper {
     this.pool = new Pool(
       {
         connectionString: process.env.DATABASE_URL,
-        connectionTimeoutMillis: 30000,
-        idleTimeoutMillis: 30000,
         ssl: true,
       }
     );
@@ -19,6 +17,7 @@ class PostgresHelper {
       var res = await this.pool.query('SELECT user_id, channel_id FROM imagesweeper WHERE user_id = $1 AND channel_id = $2;', [message.author.id, message.channel.id]);
     } catch(err) {
       console.log(err);
+      return false;
     }
     if (res.rows && res.rows.length > 0) return true;
     return false;
