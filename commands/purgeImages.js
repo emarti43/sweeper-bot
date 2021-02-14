@@ -1,6 +1,12 @@
 require('dotenv').config();
 const botHelper = require('../botHelper.js');
 const logger = require('debug')('commands::purgeImages');
+const Rollbar = require('rollbar');
+var rollbar = new Rollbar({
+  accessToken: process.env.ROLLBAR_AUTH,
+  captureUncaught: true,
+  captureUnhandledRejections: true
+});
 
 async function purgeIsAlreadyQueued(psqlHelper, userId, channelId) {
   let response = await psqlHelper.getUserCheckpoint(userId, channelId);
@@ -26,7 +32,7 @@ exports.startPurge = async function(targetUser, targetChannel, psqlHelper) {
       logger(serverId, response);
   } catch (error) {
       logger(error);
-      //rollbar.error(error);
+      rollbar.error(error);
   }
 
   let imageCount = 0;
@@ -38,7 +44,7 @@ exports.startPurge = async function(targetUser, targetChannel, psqlHelper) {
           } catch (err) {
               logger('fetched nonexistent key');
               logger(err);
-              //rollbar.error(error);
+              rollbar.error(error);
               psqlHelper.deleteImage(response.rows[i].message_id, targetChannel.id, serverId);
               continue;
           }
@@ -62,7 +68,7 @@ exports.startPurge = async function(targetUser, targetChannel, psqlHelper) {
   } catch (err) {
       logger('failed to remove checkpoint');
       logger(error);
-      //rollbar.error(error);
+      rollbar.error(error);
   }
   targetUser.send(
     `Hi ${targetUser.username}. I've deleted ${imageCount} images and links from ${targetChannel.name}.`
@@ -129,7 +135,7 @@ exports.initialize = async function(message, psqlHelper, client) {
     exports.startPurge(targetUser, targetChannel, psqlHelper);
   } catch (err) {
     logger('Could not complete Purge!\n', err);
-    //rollbar.error(error);
+    rollbar.error(error);
     invoker.send(
       `Hi ${invoker.username}. ${startedByAdmin ? `The purge for ${targetUser.username}` : `Your purge` } has failed to finish 💀. Please message binko and ask him what went wrong 👺.`
     );

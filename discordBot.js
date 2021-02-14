@@ -2,7 +2,12 @@ require('dotenv').config();
 const Discord = require('discord.js');
 const logger = require('debug')('client');
 const botHelper = require('./botHelper.js');
-
+const Rollbar = require('rollbar');
+var rollbar = new Rollbar({
+  accessToken: process.env.ROLLBAR_AUTH,
+  captureUncaught: true,
+  captureUnhandledRejections: true
+});
 
 // ****************************************
 // COMMANDS
@@ -62,6 +67,7 @@ async function continuePurges() {
     } else {
       logger('Restarting Purges');
       var res = await psqlHelper.getAllCheckpoints();
+      logger('Fetched all purging checkpoints');
       for(let i = 0; i < res.rows.length; i++) {
         let targetUser = await client.fetchUser(res.rows[i].user_id);
         let targetChannel = await client.channels.get(res.rows[i].channel_id);
@@ -71,6 +77,7 @@ async function continuePurges() {
     }
   } catch(err) {
     logger(err);
+    rollbar.error(err)
   }
 }
 
@@ -84,6 +91,7 @@ async function scrapeChannels() {
 // BOT COMMANDS AND EVENTS
 
 client.on('ready', () => {
+  rollbar.log("Bot is ready");
   logger('Starting bot up. Ready to receive connections...');
   scrapeChannels();
   continuePurges();
