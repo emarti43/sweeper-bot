@@ -60,14 +60,14 @@ async function processMessage(message) {
   }
 }
 
-async function continuePurges() {
+function continuePurges() {
   if (process.env.NO_PURGES) {
     logger('Purges are turned off');
     return;
   } 
   logger('Restarting Purges');
   try {
-    var res = await psqlHelper.getAllCheckpoints();
+    var res = psqlHelper.getAllCheckpoints();
   } catch (err) {
     logger('Failed to fetch endpoints');
     rollbar.error(err);
@@ -95,7 +95,7 @@ async function scrapeChannels() {
 
 // BOT COMMANDS AND EVENTS
 
-client.on('ready', async () => {
+client.on('ready', () => {
   rollbar.log("Bot is ready");
   logger('Starting bot up. Ready to receive connections...');
   scrapeChannels();
