@@ -14,8 +14,8 @@ async function purgeIsAlreadyQueued(psqlHelper, userId, channelId) {
   return false;
 }
 
-async function hasAdminPerms(message) {
-  return message.guild.members.get(message.author.id).permissions.has('ADMINISTRATOR');
+async function hasAdminPerms(user) {
+  return message.guild.members.get(user.id).permissions.has('ADMINISTRATOR');
 }
 
 exports.startPurge = async function(targetUser, targetChannel, psqlHelper) {
@@ -85,17 +85,11 @@ exports.initialize = async function(message, psqlHelper, client) {
     return;
   }
   let invoker = message.author;
-  let isAdmin = await hasAdminPerms(message);
-  let args = message.content.split(/\s+/);
+  let isAdmin = await hasAdminPerms(invoker);
   let targetUser = message.author;
   let targetChannel = await message.mentions.channels.first();
-  let startedByAdmin = false;
 
-  if (!targetChannel && isAdmin) {
-    targetChannel = botHelper.parseChannel(args[2], client);
-    targetUser = message.guild.members.get(args[1].slice(3, args[1].length - 1));
-    startedByAdmin = true;
-  }
+  if (isAdmin) targetUser = message.mentions.users.first();
 
   if(!targetChannel) {
     botHelper.MessageResponse(
@@ -137,7 +131,7 @@ exports.initialize = async function(message, psqlHelper, client) {
     logger('Could not complete Purge!\n', err);
     rollbar.error(error);
     invoker.send(
-      `Hi ${invoker.username}. ${startedByAdmin ? `The purge for ${targetUser.username}` : `Your purge` } has failed to finish 💀. Please message binko and ask him what went wrong 👺.`
+      `Hi ${invoker.username}. ${invoker.id !== targetUser.id ? `The purge for ${targetUser.username}` : `Your purge` } has failed to finish 💀. Please message binko and ask him what went wrong 👺.`
     );
   }
 }
