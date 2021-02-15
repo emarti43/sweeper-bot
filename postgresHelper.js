@@ -11,7 +11,7 @@ class PostgresHelper {
         ssl: true,
       }
     );
-    this.client = discordClient;
+    this.discordClient = discordClient;
   }
 
   async isSweepableChannel(message) {
@@ -204,7 +204,7 @@ class PostgresHelper {
     var channels = []
     if (response.rows && response.rows.length > 0) {
       for(let i = 0; i < response.rows.length; i++) {
-        channels.push(this.client.channels.get(response.rows[i].channel_id));
+        channels.push(this.discordClient.channels.get(response.rows[i].channel_id));
       }
     }
     return channels;

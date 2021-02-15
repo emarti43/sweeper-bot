@@ -25,8 +25,7 @@ const removeChannel = require('./commands/removeChannel.js');
 
 const client = new Discord.Client();
 const psqlHelper = new PostgresHelper(client);
-logger("Connected to db");
-logger(psqlHelper);
+logger(psqlHelper.pool.totalCount, psqlHelper.pool.idleCount, psqlHelper.pool.waitingCount);
 
 function tryCommand(dispatch, args, commandName) {
   try {
@@ -125,6 +124,7 @@ client.on('channelDelete', channel => {
 
 client.on('message', message => {
   let args = message.content.split(/\s+/);
+  logger(psqlHelper.pool.totalCount, psqlHelper.pool.idleCount, psqlHelper.pool.waitingCount);
   switch(args[0]) {
     case '!purge_images':
       tryCommand(PurgeImages.initialize, [message, psqlHelper, client], '!purge_images');
