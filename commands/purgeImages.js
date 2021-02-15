@@ -89,7 +89,7 @@ exports.initialize = async function(message, psqlHelper, client) {
   let targetUser = message.author;
   let targetChannel = await message.mentions.channels.first();
 
-  if (isAdmin) targetUser = message.mentions.users.first();
+  if (isAdmin && message.mentions.users.array().length > 0) targetUser = message.mentions.users.first();
 
   if(!targetChannel) {
     botHelper.MessageResponse(
