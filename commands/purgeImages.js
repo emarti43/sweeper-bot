@@ -14,7 +14,7 @@ async function purgeIsAlreadyQueued(psqlHelper, userId, channelId) {
   return false;
 }
 
-async function hasAdminPerms(user) {
+async function hasAdminPerms(message, user) {
   return message.guild.members.get(user.id).permissions.has('ADMINISTRATOR');
 }
 
@@ -85,7 +85,7 @@ exports.initialize = async function(message, psqlHelper, client) {
     return;
   }
   let invoker = message.author;
-  let isAdmin = await hasAdminPerms(invoker);
+  let isAdmin = await hasAdminPerms(message, invoker);
   let targetUser = message.author;
   let targetChannel = await message.mentions.channels.first();
 
